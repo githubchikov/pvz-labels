@@ -1,0 +1,15 @@
+html {
+    color-scheme: dark;
+
+    --color-text-main: #ffffff;
+    --color-text-secondary: #878787;
+
+    --color-bg-body: #222222;
+    --color-bg-secondary: #303030;
+    --color-bg-btn-neutral: #5E5E5E;
+
+    --color-palette-negative: #FE5C5C;
+    --color-palette-positive: #53DF40;
+
+    --color-border-field: #828282;
+}

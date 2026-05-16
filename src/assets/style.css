@@ -1,0 +1,45 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+
+@font-face {
+  font-family: 'Euclid Circular A';
+  src: url('/fonts/Euclid-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Euclid Circular A';
+  font-weight: 500;
+  src: url('/fonts/Euclid-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Euclid Circular A';
+  font-weight: bold;
+  src: url('/fonts/Euclid-Bold.ttf') format('truetype');
+}
+
+html,
+body {
+  font-family: 'Euclid Circular A', sans-serif !important;
+  overflow: hidden !important;
+  line-height: normal !important;
+  @apply text-main
+}
+
+html,
+body,
+#app {
+  background: transparent !important;
+}
+
+
+
+/*::-webkit-scrollbar {*/
+/*  background-color: var(--color-border-secondary);*/
+/*  @apply rounded-full w-4;*/
+/*}*/
+
+/*::-webkit-scrollbar-thumb {*/
+/*  background-color: var(--color-border-main);*/
+/*  @apply rounded-full w-4;*/
+/*}*/
