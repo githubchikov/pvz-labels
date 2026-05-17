@@ -13,6 +13,7 @@ import Container from './components/common/Container.vue'
 import Button from './components/ui/button.vue'
 import Input from './components/ui/Input.vue'
 import Select from './components/ui/Select.vue'
+import AnimatedContent from './components/common/AnimatedContent.vue'
 
 library.add(faCircleCheck, faCircleExclamation)
 const app = createApp(App)
@@ -22,6 +23,7 @@ app.component('common-container', Container)
 app.component('ui-button', Button)
 app.component('ui-input', Input)
 app.component('ui-select', Select)
+app.component('common-animated-content', AnimatedContent)
 
 app.use(router)
 app.mount('#app')

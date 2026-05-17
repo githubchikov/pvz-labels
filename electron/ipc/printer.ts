@@ -1,11 +1,14 @@
 import { ipcMain, BrowserWindow, shell } from 'electron';
 import { exec } from 'child_process';
 
-function getLabelHtml(width: number, height: number, text: string): string {
+function getLabelHtml(width: number, height: number, offsetX: number, offsetY: number, text: string): string {
     const isRotated = width < height;
     const minSide = Math.min(width, height);
     const fontSizePt = minSide * 1.2;
-    const rotateCss = isRotated ? 'transform: rotate(90deg);' : 'transform: rotate(180deg);';
+
+    const rotateCss = isRotated
+        ? `transform: translate(${offsetX}mm, ${offsetY}mm) rotate(90deg);`
+        : `transform: translate(${offsetX}mm, ${offsetY}mm);`;
 
     return `
         <!DOCTYPE html>
@@ -39,12 +42,39 @@ function getLabelHtml(width: number, height: number, text: string): string {
                         white-space: nowrap;
                         line-height: 1;
                         text-align: center;
-                        max-width: 99%;
                     }
                 </style>
             </head>
             <body>
                 <div class="label-text">${text}</div>
+                
+                <script>
+                    window.onload = () => {
+                        const text = document.querySelector('.label-text');
+                        const container = document.body;
+                    
+                        let fontSize = 200;
+                    
+                        text.style.fontSize = fontSize + 'pt';
+                    
+                        function fits() {
+                            const rect = text.getBoundingClientRect();
+                            const containerRect = container.getBoundingClientRect();
+                        
+                            return (
+                                rect.left >= containerRect.left &&
+                                rect.top >= containerRect.top &&
+                                rect.right <= containerRect.right &&
+                                rect.bottom <= containerRect.bottom
+                            );
+                        }
+                    
+                        while (!fits() && fontSize > 4) {
+                            fontSize -= 1;
+                            text.style.fontSize = fontSize + 'pt';
+                        }
+                    };
+                </script>
             </body>
         </html>
     `;
@@ -57,21 +87,27 @@ export function registerPrinterIPC(mainWindow: BrowserWindow | null) {
         return await win.webContents.getPrintersAsync();
     });
 
-    ipcMain.handle('printer:print', async (_event, printerName: string, width: number = 30, height: number = 10, text: string) => {
-        console.log(`[Printer] Print request: ${printerName}, Size: ${width}x${height}mm`);
+    ipcMain.handle('printer:print', async (_,
+                                           printerName: string,
+                                           width: number, height: number,
+                                           offsetX: number, offsetY: number,
+                                           text: string) => {
 
         return new Promise((resolve) => {
             const printWindow = new BrowserWindow({
                 show: false,
                 width: 500,
                 height: 500,
+
+                autoHideMenuBar: false,
+
                 webPreferences: {
                     nodeIntegration: false,
                     contextIsolation: true
                 }
             });
 
-            const htmlContent = getLabelHtml(width, height, text);
+            const htmlContent = getLabelHtml(width, height, offsetX, offsetY, text);
             printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
 
             printWindow.webContents.on('did-finish-load', () => {

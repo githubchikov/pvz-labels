@@ -12,9 +12,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.invoke('area:open-selector').then(() => {})
     },
 
-    onAreaSelected: (callback: (area: SelectedArea) => void) => {
-        ipcRenderer.removeAllListeners('area:selected')
-
+    onAreaSelectedOnce: (callback: (area: any) => void) => {
         ipcRenderer.once('area:selected', (_, area) => {
             callback(area)
         })
@@ -29,8 +27,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     getPrinters: () => ipcRenderer.invoke('printer:list'),
-    print: (name: string, width: number, height: number, text: string) => ipcRenderer.invoke('printer:print', name, width, height, text),
     openPrinterSettings: (printerName: string) => ipcRenderer.invoke('printer:openSettings', printerName),
+    print: (name: string, width: number, height: number, offsetX: number, offsetY: number, text: string) => ipcRenderer.invoke('printer:print', name, width, height, offsetX, offsetY, text),
 
     startScreenCapture: () => ipcRenderer.invoke('screen-capture:start'),
 

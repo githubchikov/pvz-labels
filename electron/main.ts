@@ -46,7 +46,7 @@ function createWindow() {
         fullscreenable: false,
 
         backgroundColor: '#222222',
-        autoHideMenuBar: true,
+        // autoHideMenuBar: true,
 
         webPreferences: {
             preload: path.join(__dirname, 'preload.mjs'),

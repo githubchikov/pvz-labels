@@ -1,7 +1,7 @@
 {
   "name": "pvz_labels",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,6 @@
     "@fortawesome/free-regular-svg-icons": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/vue-fontawesome": "^3.1.2",
-    "@tailwindcss/language-server": "^0.14.29",
     "@tailwindcss/vite": "^4.3.0",
     "tailwindcss": "^4.3.0",
     "tesseract.js": "^7.0.0",
@@ -22,6 +21,7 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@tailwindcss/language-server": "^0.14.29",
     "@vitejs/plugin-vue": "^5.0.4",
     "electron": "^30.0.1",
     "electron-builder": "^24.13.3",

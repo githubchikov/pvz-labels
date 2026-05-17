@@ -64,6 +64,7 @@ export function createBannerOverlayWindow() {
                     font-family: 'Euclid Circular A', sans-serif;
                     font-size: 20px;
                     font-weight: bold;
+                    box-shadow: 0px 0px 0px 2px rgba(130, 130, 130, 1) inset;
                 ">
                     <div>PVZ Labels</div>
                     <div>Идет распознавание текста</div>
