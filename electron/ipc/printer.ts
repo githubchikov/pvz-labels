@@ -1,14 +1,13 @@
 import { ipcMain, BrowserWindow, shell } from 'electron';
 import { exec } from 'child_process';
 
-function getLabelHtml(width: number, height: number, offsetX: number, offsetY: number, text: string): string {
+function getLabelHtml(width: number, height: number, text: string): string {
     const isRotated = width < height;
     const minSide = Math.min(width, height);
-    const fontSizePt = minSide * 1.2;
+    const fontSizePx = minSide * 1.2;
 
     const rotateCss = isRotated
-        ? `transform: translate(${offsetX}mm, ${offsetY}mm) rotate(90deg);`
-        : `transform: translate(${offsetX}mm, ${offsetY}mm);`;
+        ? `transform: rotate(90deg);` : ``;
 
     return `
         <!DOCTYPE html>
@@ -36,7 +35,7 @@ function getLabelHtml(width: number, height: number, offsetX: number, offsetY: n
                         position: absolute;
                         ${rotateCss}
                         font-family: "Euclid Circular A", Arial, sans-serif;
-                        font-size: ${fontSizePt}pt;
+                        font-size: ${fontSizePx}px;
                         font-weight: bold;
                         color: black;
                         white-space: nowrap;
@@ -55,7 +54,7 @@ function getLabelHtml(width: number, height: number, offsetX: number, offsetY: n
                     
                         let fontSize = 200;
                     
-                        text.style.fontSize = fontSize + 'pt';
+                        text.style.fontSize = fontSize + 'px';
                     
                         function fits() {
                             const rect = text.getBoundingClientRect();
@@ -70,8 +69,8 @@ function getLabelHtml(width: number, height: number, offsetX: number, offsetY: n
                         }
                     
                         while (!fits() && fontSize > 4) {
-                            fontSize -= 1;
-                            text.style.fontSize = fontSize + 'pt';
+                            fontSize -= 0.5;
+                            text.style.fontSize = fontSize + 'px';
                         }
                     };
                 </script>
@@ -95,7 +94,7 @@ export function registerPrinterIPC(mainWindow: BrowserWindow | null) {
 
         return new Promise((resolve) => {
             const printWindow = new BrowserWindow({
-                show: false,
+                // show: false,
                 width: 500,
                 height: 500,
 
@@ -107,8 +106,9 @@ export function registerPrinterIPC(mainWindow: BrowserWindow | null) {
                 }
             });
 
-            const htmlContent = getLabelHtml(width, height, offsetX, offsetY, text);
+            const htmlContent = getLabelHtml(width, height, text);
             printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+            console.log((width + 4) * 1000)
 
             printWindow.webContents.on('did-finish-load', () => {
                 printWindow.webContents.print(
@@ -116,8 +116,8 @@ export function registerPrinterIPC(mainWindow: BrowserWindow | null) {
                         deviceName: printerName,
                         silent: true,
                         pageSize: {
-                            width: width * 1000,
-                            height: height * 1000
+                            width: (Number(width) + Number(offsetX)) * 1000,
+                            height: (Number(height) + Number(offsetY)) * 1000
                         },
                         margins: {
                             marginType: 'none'
@@ -125,7 +125,7 @@ export function registerPrinterIPC(mainWindow: BrowserWindow | null) {
                         printBackground: true
                     },
                     (success, errorType) => {
-                        printWindow.destroy();
+                        // printWindow.destroy();
                         if (success) {
                             console.log('[Printer] Job sent.');
                             resolve({ success: true, message: 'Label printed' });
@@ -138,13 +138,13 @@ export function registerPrinterIPC(mainWindow: BrowserWindow | null) {
             });
 
             printWindow.webContents.on('did-fail-load', () => {
-                printWindow.destroy();
+                // printWindow.destroy();
                 resolve({ success: false, error: 'Failed to load content' });
             });
 
             setTimeout(() => {
                 if (!printWindow.isDestroyed()) {
-                    printWindow.destroy();
+                    // printWindow.destroy();
                     resolve({ success: false, error: 'Timeout' });
                 }
             }, 10000);
