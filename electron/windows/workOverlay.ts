@@ -30,10 +30,11 @@ export async function createWorkOverlayWindow(area: SelectedArea) {
 
     ocrHudWindow = new BrowserWindow({
         width: 656 - 43,
-        height: 154,
+        height: 200,
         x: x,
         y: 40,
 
+        useContentSize: true,
         frame: false,
         transparent: true,
         resizable: false,

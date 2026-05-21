@@ -40,6 +40,27 @@
                     </div>
                 </div>
             </div>
+
+            <div class="modal" v-else-if="areaSave.modal">
+                <div class="modal-container">
+                    <b class="text-center text-24">Сохранение области захвата</b>
+
+                    <ui-input
+                        v-model="areaSave.name"
+                        name="Имя области захвата"
+                    />
+
+                    <div class="flex flex-col gap-8">
+                        <ui-button appearance="positive" @click="saveAreaConfirm()">
+                            Сохранить
+                        </ui-button>
+
+                        <ui-button @click="areaSave.modal = false">
+                            Закрыть
+                        </ui-button>
+                    </div>
+                </div>
+            </div>
         </transition>
 
 
@@ -100,6 +121,35 @@
                             </ui-button>
                             <ui-button class="flex-1" @click="openPreviewWindow()">
                                 Предпросмотр
+                            </ui-button>
+                        </div>
+                        <ui-button
+                            @click="saveArea()"
+                            :disabled="selectedSavedArea !== null"
+                        >
+                            Сохранить текущую область
+                        </ui-button>
+                    </template>
+                </common-container>
+
+
+                <common-container>
+                    <template #header>
+                        <b class="flex-1 text-20">Сохраненные области захвата</b>
+                    </template>
+
+                    <template #content>
+                        <div class="text-secondary">
+                            Вы можете сохранять область захвата для упрощения работы. Зеленым выделена та зона, которая сейчас используется
+                        </div>
+                        <div class="flex flex-col gap-8" v-if="savedAreas.length > 0">
+                            <ui-button
+                                v-for="area in savedAreas"
+                                :key="area.id"
+                                @click="selectArea(area)"
+                                :appearance="selectedSavedArea === area.id ? 'positive' : 'neutral'"
+                            >
+                                {{ area.name }}
                             </ui-button>
                         </div>
                     </template>
@@ -345,6 +395,12 @@
                     width: 0,
                     height: 0
                 },
+                savedAreas: [],
+                selectedSavedArea: null,
+                areaSave: {
+                    modal: false,
+                    name: ''
+                },
                 printer: {
                     list: [],
                     selected: null
@@ -427,11 +483,69 @@
                 window.electronAPI.onAreaSelected((area) => {
                     this.area = area
 
+                    const matchedArea = this.savedAreas.find(saved =>
+                        JSON.stringify(saved.area) === JSON.stringify(area)
+                    )
+
+                    if (matchedArea) {
+                        this.selectedSavedArea = matchedArea.id
+                    } else {
+                        this.selectedSavedArea = null
+                    }
+
                     localStorage.setItem(
-                        'selectedArea',
-                        JSON.stringify(area)
+                        'selectedSavedArea',
+                        JSON.stringify(this.selectedSavedArea)
                     )
                 })
+            },
+
+            saveArea() {
+                if (!this.areaCorrected) {
+                    return this.showError('Сначала выберите область захвата', true)
+                }
+
+                this.areaSave.name = ''
+                this.areaSave.modal = true
+            },
+
+            saveAreaConfirm() {
+                if (!this.areaSave.name?.trim()) {
+                    return this.showError('Введите название области', true)
+                }
+
+                const newArea = {
+                    id: Date.now(),
+                    name: this.areaSave.name.trim(),
+                    area: { ...this.area }
+                }
+
+                this.savedAreas.push(newArea)
+
+                localStorage.setItem(
+                    'savedAreas',
+                    JSON.stringify(this.savedAreas)
+                )
+
+                this.selectedSavedArea = newArea.id
+
+                this.areaSave.modal = false
+            },
+
+            selectArea(savedArea) {
+                this.area = { ...savedArea.area }
+
+                this.selectedSavedArea = savedArea.id
+
+                localStorage.setItem(
+                    'selectedArea',
+                    JSON.stringify(this.area)
+                )
+
+                localStorage.setItem(
+                    'selectedSavedArea',
+                    JSON.stringify(savedArea.id)
+                )
             },
 
 
@@ -681,7 +795,7 @@
                             cleanText
                         )
 
-                        await this.print(cleanText + ".")
+                        await this.print(cleanText)
 
                         this.ocr.lastPrintedText = cleanText
                         window.electronAPI.updateWorkOverlayText(text)
@@ -826,6 +940,26 @@
                         localStorage.removeItem('selectedPrinter')
                     }
                 }
+
+                const savedAreas = localStorage.getItem('savedAreas')
+                if (savedAreas) {
+                    try {
+                        this.savedAreas = JSON.parse(savedAreas)
+                    } catch(e) {
+                        console.error('Failed to load saved areas', e)
+                        localStorage.removeItem('savedAreas')
+                    }
+                }
+
+                const selectedSavedArea = localStorage.getItem('selectedSavedArea')
+                if (selectedSavedArea) {
+                    try {
+                        this.selectedSavedArea = JSON.parse(selectedSavedArea)
+                    } catch(e) {
+                        console.error('Failed to load selected saved area', e)
+                        localStorage.removeItem('selectedSavedArea')
+                    }
+                }
             }
         },
 
@@ -924,6 +1058,13 @@
                 localStorage.setItem(
                     'selectedPrinter',
                     JSON.stringify(newValue)
+                )
+            },
+
+            selectedSavedArea(newVal) {
+                localStorage.setItem(
+                    'selectedSavedArea',
+                    JSON.stringify(newVal)
                 )
             }
         },

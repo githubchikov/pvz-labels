@@ -43,6 +43,7 @@ export function getLabelHtml(label: LabelConfig, text: string): string {
                         text-align: center;
                         line-height: 1;
                         transform: ${rotateCss};
+                        text-decoration: underline;
                     }
                 </style>
             </head>
