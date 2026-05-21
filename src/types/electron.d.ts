@@ -1,9 +1,19 @@
+import {ipcRenderer} from "electron";
+
 export {}
 
 declare global {
     interface Window {
         electronAPI: {
             openAreaSelector: () => Promise<void>
+            closeAreaSelector: () => Promise<void>
+
+            sendSelectedArea: (area: {
+                x: number
+                y: number
+                width: number
+                height: number
+            }) => void
 
             onAreaSelected: (
                 callback: (area: {
@@ -14,20 +24,26 @@ declare global {
                 }) => void
             ) => void
 
-            sendSelectedArea: (area: {
-                x: number
-                y: number
-                width: number
-                height: number
-            }) => void
-
-            closeAreaSelector: () => void
 
             getPrinters: () => Promise<string[]>
+
             print: (printerName: string, width, height) => Promise<boolean>
+
             openPrinterSettings: (printerName: string) => Promise<boolean>
 
-            openPreviewWindow: (base64: string) => void
+
+            showWorkOverlayWindow: () => void,
+
+            hideWorkOverlayWindow: () => void,
+
+
+            getScreenRecognitionSource: () => Promise<{
+                sourceId: string
+            }>
+
+
+            openPreviewWindow: () => void
+            // onWorkOverlayUpdateText(param: ((text) => void) | any): void;
         }
     }
 }

@@ -1,40 +1,85 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { SelectedArea } from "../shared/types/area";
+import {LabelConfig} from "./types/printer.ts";
 
-type SelectedArea = {
-    x: number
-    y: number
-    width: number
-    height: number
-}
 
 contextBridge.exposeInMainWorld('electronAPI', {
     openAreaSelector: () => {
-        ipcRenderer.invoke('area:open-selector').then(() => {})
+        ipcRenderer.send('area-selector:open')
     },
 
-    onAreaSelectedOnce: (callback: (area: any) => void) => {
-        ipcRenderer.once('area:selected', (_, area) => {
+    closeAreaSelector: () => {
+        ipcRenderer.send('area-selector:close')
+    },
+
+    sendSelectedArea: (area: SelectedArea) => {
+        void ipcRenderer.invoke('area-selector:selected', area)
+    },
+
+    onAreaSelected: (callback: (area: SelectedArea) => void) => {
+        ipcRenderer.removeAllListeners('area-selector:selected')
+        ipcRenderer.once('area-selector:selected', (_, area: SelectedArea) => {
             callback(area)
         })
     },
 
-    sendSelectedArea: (area: SelectedArea) => {
-        ipcRenderer.send('area:selected', area)
-    },
-
-    closeAreaSelector: () => {
-        ipcRenderer.send('area:close')
-    },
 
     getPrinters: () => ipcRenderer.invoke('printer:list'),
+
     openPrinterSettings: (printerName: string) => ipcRenderer.invoke('printer:openSettings', printerName),
-    print: (name: string, width: number, height: number, offsetX: number, offsetY: number, text: string) => ipcRenderer.invoke('printer:print', name, width, height, offsetX, offsetY, text),
 
-    startScreenCapture: () => ipcRenderer.invoke('screen-capture:start'),
+    print: (
+        name: string,
+        label: LabelConfig,
+        text: string
+    ) => ipcRenderer.invoke('printer:print', name, label, text),
 
 
-    openPreviewWindow: (base64: string) => ipcRenderer.invoke('preview:open', base64),
+    getScreenRecognitionSource: () =>
+        ipcRenderer.invoke('screen-recognition:get-source'),
 
-    showBannerOverlay: () => ipcRenderer.send('banner-overlay:show'),
-    hideBannerOverlay: () => ipcRenderer.send('banner-overlay:hide'),
+
+    openPreviewWindow: (base64: string) =>
+        ipcRenderer.invoke('preview:open', base64),
+
+
+    showWorkOverlayWindow: (area: SelectedArea) =>
+        ipcRenderer.invoke('work-overlay:show', area),
+
+    updateWorkOverlayText: (text: string) =>
+        ipcRenderer.send('work-overlay:update-text', text),
+
+    hideWorkOverlayWindow: () =>
+        ipcRenderer.send('work-overlay:hide'),
+
+    onWorkOverlayArea: (callback: (area: SelectedArea) => void) => {
+        ipcRenderer.on(
+            'work-overlay:set-area',
+            (_, area: SelectedArea) => {
+                callback(area);
+            }
+        )
+    },
+
+    onWorkOverlayUpdateText: (callback: (text: string) => void) => {
+        ipcRenderer.on(
+            'work-overlay:update-text',
+            (_, text: string) => {
+                callback(text);
+            }
+        )
+    },
+
+    stopRecognition: () => {
+        ipcRenderer.send('work-overlay:stop-recognition')
+    },
+
+    onStopRecognition: (callback: () => void) => {
+        ipcRenderer.on('work-overlay:stop-recognition', () => {
+            callback()
+        })
+    },
+
+    getWorkOverlayArea: () =>
+        ipcRenderer.invoke('work-overlay:get-area'),
 })

@@ -4,12 +4,11 @@ html {
     --color-text-main: #ffffff;
     --color-text-secondary: #878787;
 
-    --color-bg-body: #222222;
-    --color-bg-secondary: #303030;
-    --color-bg-btn-neutral: #5E5E5E;
+    --color-bg-body: #171717;
+    --color-bg-secondary: #252525;
+    --color-bg-tertiary: #1C1C1C;
+    --color-bg-btn-neutral: #3B3B3B;
 
-    --color-palette-negative: #FE5C5C;
-    --color-palette-positive: #53DF40;
-
-    --color-border-field: #828282;
+    --color-palette-negative: #EE4848;
+    --color-palette-positive: #51D33F;
 }

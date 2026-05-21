@@ -33,7 +33,7 @@ export default {
                 positive: 'bg-palette-positive',
                 negative: 'bg-palette-negative'
             };
-            let ret = `${this.$attrs.class ? this.$attrs.class + " " : ""}${classes[this.appearance]} overflow-hidden rounded-16 font-medium min-h-36 h-36 text-center flex justify-center items-center px-12 transition duration-300`;
+            let ret = `${this.$attrs.class ? this.$attrs.class + " " : ""}${classes[this.appearance]} overflow-hidden rounded-12 font-medium min-h-36 h-36 text-center flex justify-center items-center px-12 transition duration-300`;
 
             if (!this.$attrs.disabled) {
                 ret += ' active:scale-95';

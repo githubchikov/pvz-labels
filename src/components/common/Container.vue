@@ -1,6 +1,6 @@
 <template>
     <div
-        class="flex flex-col gap-8 rounded-28 p-12 bg-secondary"
+        class="flex flex-col gap-8 rounded-28 p-16 bg-secondary"
         :class="{
             'border-2 border-palette-positive': border === 'positive',
             'border-2 border-palette-negative': border === 'negative'

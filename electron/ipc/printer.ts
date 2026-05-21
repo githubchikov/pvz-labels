@@ -1,104 +1,35 @@
-import { ipcMain, BrowserWindow, shell } from 'electron';
-import { exec } from 'child_process';
+import {ipcMain, BrowserWindow} from 'electron';
+import {exec} from 'child_process';
 
-function getLabelHtml(width: number, height: number, text: string): string {
-    const isRotated = width < height;
-    const minSide = Math.min(width, height);
-    const fontSizePx = minSide * 1.2;
+import type {LabelConfig, Result} from '../types/printer'
+import {getLabelHtml, getPageSize} from '../services/printer.service';
 
-    const rotateCss = isRotated
-        ? `transform: rotate(90deg);` : ``;
 
-    return `
-        <!DOCTYPE html>
-        <html lang="ru">
-            <head>
-                <style>
-                    @page {
-                        size: ${width}mm ${height}mm;
-                        margin: 0;
-                    }
-                    html,
-                    body {
-                        margin: 0;
-                        padding: 0;
-                        width: ${width}mm;
-                        height: ${height}mm;
-                        background: white;
-                        overflow: hidden;
-                        position: relative;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                    }
-                    .label-text {
-                        position: absolute;
-                        ${rotateCss}
-                        font-family: "Euclid Circular A", Arial, sans-serif;
-                        font-size: ${fontSizePx}px;
-                        font-weight: bold;
-                        color: black;
-                        white-space: nowrap;
-                        line-height: 1;
-                        text-align: center;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="label-text">${text}</div>
-                
-                <script>
-                    window.onload = () => {
-                        const text = document.querySelector('.label-text');
-                        const container = document.body;
-                    
-                        let fontSize = 200;
-                    
-                        text.style.fontSize = fontSize + 'px';
-                    
-                        function fits() {
-                            const rect = text.getBoundingClientRect();
-                            const containerRect = container.getBoundingClientRect();
-                        
-                            return (
-                                rect.left >= containerRect.left &&
-                                rect.top >= containerRect.top &&
-                                rect.right <= containerRect.right &&
-                                rect.bottom <= containerRect.bottom
-                            );
-                        }
-                    
-                        while (!fits() && fontSize > 4) {
-                            fontSize -= 0.5;
-                            text.style.fontSize = fontSize + 'px';
-                        }
-                    };
-                </script>
-            </body>
-        </html>
-    `;
-}
-
-export function registerPrinterIPC(mainWindow: BrowserWindow | null) {
+export function registerPrinterIPC() {
     ipcMain.handle('printer:list', async () => {
-        const win = mainWindow || BrowserWindow.getAllWindows()[0];
-        if (!win) return [];
-        return await win.webContents.getPrintersAsync();
-    });
+        const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0]
+        if (!win) {
+            console.error('[IPC][PRINTER] Failed to get window for printer list');
+            return [];
+        }
 
-    ipcMain.handle('printer:print', async (_,
-                                           printerName: string,
-                                           width: number, height: number,
-                                           offsetX: number, offsetY: number,
-                                           text: string) => {
+        console.log('[IPC][PRINTER] Getting printers list');
+        return win.webContents.getPrintersAsync();
+    })
 
-        return new Promise((resolve) => {
+    ipcMain.handle('printer:print', async (_, printerName: string, label: LabelConfig, text: string) => {
+        console.log('[IPC][PRINTER] Starting print job:', {
+            printerName,
+            text,
+            label
+        });
+
+        return new Promise<Result>((resolve) => {
             const printWindow = new BrowserWindow({
-                // show: false,
+                show: false,
                 width: 500,
                 height: 500,
-
-                autoHideMenuBar: false,
+                autoHideMenuBar: true,
 
                 webPreferences: {
                     nodeIntegration: false,
@@ -106,62 +37,100 @@ export function registerPrinterIPC(mainWindow: BrowserWindow | null) {
                 }
             });
 
-            const htmlContent = getLabelHtml(width, height, text);
-            printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
-            console.log((width + 4) * 1000)
+            const htmlContent = getLabelHtml(label, text);
+            printWindow.loadURL(
+                `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`
+            );
 
-            printWindow.webContents.on('did-finish-load', () => {
-                printWindow.webContents.print(
-                    {
-                        deviceName: printerName,
-                        silent: true,
-                        pageSize: {
-                            width: (Number(width) + Number(offsetX)) * 1000,
-                            height: (Number(height) + Number(offsetY)) * 1000
-                        },
-                        margins: {
-                            marginType: 'none'
-                        },
-                        printBackground: true
-                    },
-                    (success, errorType) => {
-                        // printWindow.destroy();
-                        if (success) {
-                            console.log('[Printer] Job sent.');
-                            resolve({ success: true, message: 'Label printed' });
-                        } else {
-                            console.error('[Printer] Failed:', errorType);
-                            resolve({ success: false, error: errorType });
-                        }
-                    }
-                );
-            });
-
-            printWindow.webContents.on('did-fail-load', () => {
-                // printWindow.destroy();
-                resolve({ success: false, error: 'Failed to load content' });
-            });
-
-            setTimeout(() => {
+            const timeout = setTimeout(() => {
                 if (!printWindow.isDestroyed()) {
-                    // printWindow.destroy();
-                    resolve({ success: false, error: 'Timeout' });
+                    console.error('[IPC][PRINTER] Print timeout exceeded');
+                    printWindow.destroy();
+                    resolve({
+                        success: false,
+                        error: 'Print timeout exceeded'
+                    });
                 }
-            }, 10000);
+            }, 5000);
+
+            printWindow.webContents.once('did-finish-load', () => {
+                console.log('[IPC][PRINTER] Print window loaded');
+
+                printWindow.webContents.print({
+                    deviceName: printerName,
+                    silent: true,
+                    pageSize: getPageSize(label),
+                    printBackground: true,
+                    margins: {
+                        marginType: 'none'
+                    }
+                }, (success, error) => {
+                    clearTimeout(timeout);
+
+                    if (!printWindow.isDestroyed()) {
+                        printWindow.destroy();
+                    }
+
+                    if (success) {
+                        console.log('[IPC][PRINTER] Print job sent successfully');
+                        resolve({
+                            success: true
+                        });
+                    } else {
+                        console.error('[IPC][PRINTER] Print failed:', error);
+                        resolve({
+                            success: false,
+                            error: error || 'Unknown print error'
+                        });
+                    }
+                });
+            });
+
+            printWindow.webContents.once('did-fail-load', (_, errorCode, errorDescription) => {
+                console.error(
+                    '[IPC][PRINTER] Failed to load print window:',
+                    errorCode,
+                    errorDescription
+                );
+
+                if (!printWindow.isDestroyed()) {
+                    printWindow.destroy();
+                }
+
+                resolve({
+                    success: false,
+                    error: 'Failed to load print window'
+                });
+            });
         });
     });
 
-    ipcMain.handle('printer:openSettings', async (_event, printerName: string) => {
-        return new Promise((resolve) => {
+
+    ipcMain.handle('printer:openSettings', async (_, printerName: string) => {
+        console.log('[IPC][PRINTER] Opening printer settings:', printerName);
+
+        return new Promise<Result>((resolve) => {
             const command = `rundll32 printui.dll,PrintUIEntry /p /n "${printerName}"`;
 
             exec(command, (error) => {
                 if (error) {
-                    console.error('[Printer] Failed to open settings:', error);
-                    shell.openPath('control printers');
-                    resolve({ success: false, error: error.message });
+                    console.error(
+                        '[IPC][PRINTER] Failed to open printer settings, opening control panel instead:',
+                        error
+                    );
+
+                    exec('control printers');
+
+                    resolve({
+                        success: false,
+                        error: error.message || 'Failed to open printer settings'
+                    });
                 } else {
-                    resolve({ success: true });
+                    console.log('[IPC][PRINTER] Printer settings opened successfully');
+
+                    resolve({
+                        success: true
+                    });
                 }
             });
         });

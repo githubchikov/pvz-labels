@@ -20,8 +20,8 @@ export default defineConfig({
                     build: {
                         rollupOptions: {
                             output: {
-                                format: 'es',
-                                entryFileNames: 'preload.mjs',
+                                format: 'cjs',
+                                entryFileNames: 'preload.cjs',
                             },
                         },
                     },

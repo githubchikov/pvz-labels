@@ -6,7 +6,7 @@
             :value="modelValue"
             v-bind="extraProps"
             @change="handleChange"
-            class="outline-0 font-[inherit]! rounded-16 bg-btn-neutral px-12 min-h-36 h-36 w-full transition-all duration-300"
+            class="outline-0 font-[inherit]! rounded-12 bg-btn-neutral px-12 min-h-36 h-36 w-full transition-all duration-300"
             :disabled="disabled"
         >
             <option

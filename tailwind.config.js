@@ -25,9 +25,6 @@ export default {
                     negative: "var(--color-palette-negative)",
                 },
             },
-            borderColor: {
-                field: "var(--color-border-field)",
-            },
             textColor: {
                 main: "var(--color-text-main)",
                 secondary: "var(--color-text-secondary)"

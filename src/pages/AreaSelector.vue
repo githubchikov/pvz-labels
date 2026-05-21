@@ -31,7 +31,7 @@
 
                 isSelecting: false,
 
-                minSize: 100
+                minSize: 1
             }
         },
 
@@ -58,8 +58,6 @@
 
                 this.startX = e.clientX
                 this.startY = e.clientY
-
-                // сразу минимальный квадрат 10x10
                 this.currentX = e.clientX + this.minSize
                 this.currentY = e.clientY + this.minSize
             },
@@ -70,7 +68,6 @@
                 const rawX = e.clientX
                 const rawY = e.clientY
 
-                // запрещаем уходить "назад"
                 this.currentX = Math.max(this.startX + this.minSize, rawX)
                 this.currentY = Math.max(this.startY + this.minSize, rawY)
             },
@@ -80,18 +77,20 @@
 
                 this.isSelecting = false
 
-                const x = this.startX
-                const y = this.startY
+                const scale = window.devicePixelRatio || 1
 
-                const width = Math.max(this.minSize, this.currentX - this.startX)
-                const height = Math.max(this.minSize, this.currentY - this.startY)
+                const x = this.startX * scale
+                const y = this.startY * scale
+
+                const width = Math.max(this.minSize, (this.currentX - this.startX)) * scale
+                const height = Math.max(this.minSize, (this.currentY - this.startY)) * scale
 
                 requestAnimationFrame(() => {
                     window.electronAPI.sendSelectedArea({
-                        x,
-                        y,
-                        width,
-                        height
+                        x: Math.round(x),
+                        y: Math.round(y),
+                        width: Math.round(width),
+                        height: Math.round(height)
                     })
                 })
             },

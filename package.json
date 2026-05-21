@@ -1,7 +1,7 @@
 {
   "name": "pvz_labels",
   "private": true,
-  "version": "1.1.0",
+  "version": "2.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

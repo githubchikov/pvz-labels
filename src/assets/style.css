@@ -35,11 +35,11 @@ body,
 
 
 ::-webkit-scrollbar {
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-bg-tertiary);
   @apply w-[6px];
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--color-border-field);
+  background-color: var(--color-bg-secondary);
   @apply rounded-full w-[6px];
 }

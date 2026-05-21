@@ -1,15 +1,16 @@
 <template>
     <div class="h-screen bg-body flex flex-col gap-8 p-12 overflow-y-auto">
 
+
         <transition name="modal">
             <div class="modal" v-if="errorText">
                 <div class="modal-container">
-                    <div class="flex gap-8 items-center justify-center w-full">
+                    <div class="flex flex-col gap-8 items-center justify-center w-full">
                         <font-awesome-icon
                             icon="fa-solid fa-circle-exclamation"
-                            class="text-32 text-palette-negative"
+                            class="text-60 text-palette-negative"
                         />
-                        <b class="text-20">Ошибка</b>
+                        <b class="text-24">Ошибка</b>
                     </div>
 
                     <div class="text-center" v-html="errorText" />
@@ -19,28 +20,48 @@
                     </ui-button>
                 </div>
             </div>
+
+            <div class="modal" v-else-if="templates.modal">
+                <div class="modal-container">
+                    <b class="text-center text-24">Добавление шаблона</b>
+
+                    <ui-input
+                        v-model="templates.newText"
+                        name="Текст шаблона"
+                    />
+
+                    <div class="flex flex-col gap-8">
+                        <ui-button appearance="positive" @click="saveTemplate()">
+                            Сохранить
+                        </ui-button>
+                        <ui-button @click="templates.modal = false">
+                            Закрыть
+                        </ui-button>
+                    </div>
+                </div>
+            </div>
         </transition>
 
 
-        <div class="flex justify-between items-center w-full">
+        <div class="flex items-center w-full gap-8">
             <b class="text-40">PVZ Labels</b>
-            <div class="font-medium text-20">v1.1.0</div>
+            <div class="font-medium text-20 text-secondary">v2.0.0</div>
+            <div class="flex-1 text-right font-medium text-20">
+                Автоматическая печать номеров ячеек для ПВЗ
+            </div>
         </div>
 
-        <div class="text-center text-secondary font-medium text-20">
-            Автоматическая печать номеров ячеек для ПВЗ
-        </div>
 
-        <common-container :border="getBorderStyle(isEnabled)">
+        <common-container :border="getBorderStyle(ocr.isEnabled)">
             <template #header>
-                <b class="flex-1 text-20">Статус</b>
-                <b class="text-20 text-palette-positive" v-if="isEnabled">В работе</b>
-                <b class="text-20" v-else>Выключено</b>
+                <b class="flex-1 text-32">Статус</b>
+                <b class="text-32 text-palette-positive" v-if="ocr.isEnabled">В работе</b>
+                <b class="text-32" v-else>Выключено</b>
             </template>
 
             <template #content>
                 <common-animated-content>
-                    <ui-button appearance="negative" @click="stopCapture()" v-if="isEnabled">
+                    <ui-button appearance="negative" @click="stopRecognition()" v-if="ocr.isEnabled">
                         Остановить
                     </ui-button>
                     <ui-button appearance="positive" @click="startRecognition()" v-else>
@@ -51,240 +72,273 @@
         </common-container>
 
 
-        <common-container :border="getBorderStyle(areaCorrected, true)">
-            <template #header>
-                <font-awesome-icon
-                    icon="fa-solid fa-circle-exclamation"
-                    class="text-24 text-palette-negative"
-                    v-if="!areaCorrected"
-                />
-                <font-awesome-icon
-                    icon="fa-solid fa-circle-check"
-                    class="text-24 text-palette-positive"
-                    v-else
-                />
-                <b class="flex-1 text-20">Область захвата</b>
-                <div class="font-medium text-palette-negative" v-if="!areaCorrected">Область не выбрана</div>
-            </template>
+        <div class="flex gap-8">
+            <div class="w-1/2 flex flex-col gap-8">
+                <common-container :border="getBorderStyle(areaCorrected, true)">
+                    <template #header>
+                        <font-awesome-icon
+                            icon="fa-solid fa-circle-exclamation"
+                            class="text-24 text-palette-negative"
+                            v-if="!areaCorrected"
+                        />
+                        <font-awesome-icon
+                            icon="fa-solid fa-circle-check"
+                            class="text-24 text-palette-positive"
+                            v-else
+                        />
+                        <b class="flex-1 text-20">Область захвата</b>
+                        <div class="font-medium text-palette-negative" v-if="!areaCorrected">Область не выбрана</div>
+                    </template>
 
-            <template #content>
-                <div class="text-secondary">
-                    Область, в которой должно происходить распознавание номера ячейки. После выбора области не рекомендуется изменять размер браузера
-                </div>
-                <div class="flex gap-8">
-                    <ui-button class="flex-1" @click="editArea()" :disabled="isEnabled">
-                        Изменить область
-                    </ui-button>
-                    <ui-button class="flex-1" @click="openPreviewWindow()">
-                        Предпросмотр
-                    </ui-button>
-                </div>
-            </template>
-        </common-container>
-
-
-        <common-container :border="getBorderStyle(printerCorrected, true)">
-            <template #header>
-                <font-awesome-icon
-                    icon="fa-solid fa-circle-exclamation"
-                    class="text-24 text-palette-negative"
-                    v-if="!printerCorrected"
-                />
-                <font-awesome-icon
-                    icon="fa-solid fa-circle-check"
-                    class="text-24 text-palette-positive"
-                    v-else
-                />
-                <b class="flex-1 text-20">Принтер</b>
-                <div class="font-medium text-palette-negative" v-if="!printerCorrected">Принтер не выбран</div>
-            </template>
-
-            <template #content>
-                <div class="text-secondary">
-                    Программа работает преимущественно с принтерами этикеток. При выборе обычного принтера печать может происходить с ошибками
-                </div>
-
-                <ui-select
-                    v-model="printer.selected"
-                    :values="printer.list"
-                    :disabled="isEnabled"
-                />
-
-                <div class="flex gap-8">
-                    <ui-button class="flex-1" @click="openPrinterSettings()">
-                        Свойства принтера
-                    </ui-button>
-                    <ui-button class="flex-1" @click="testPrint()">
-                        Пробная печать
-                    </ui-button>
-                </div>
-                <ui-button class="flex-1" @click="getPrinters()">
-                    Обновить список принтеров
-                </ui-button>
-            </template>
-        </common-container>
+                    <template #content>
+                        <div class="text-secondary">
+                            Область, в которой должно происходить распознавание номера ячейки. После выбора области не рекомендуется изменять масштаб браузера
+                        </div>
+                        <div class="flex gap-8">
+                            <ui-button class="flex-1" @click="editArea()" :disabled="ocr.isEnabled">
+                                Изменить область
+                            </ui-button>
+                            <ui-button class="flex-1" @click="openPreviewWindow()">
+                                Предпросмотр
+                            </ui-button>
+                        </div>
+                    </template>
+                </common-container>
 
 
-        <common-container>
-            <template #header>
-                <b class="flex-1 text-20">Размер этикетки</b>
-            </template>
+                <common-container>
+                    <template #header>
+                        <b class="flex-1 text-20">Размер этикетки</b>
+                    </template>
 
-            <template #content>
-                <div class="text-secondary">
-                    Расположение и размер текста автоматически подстроится под размер этикетки
-                </div>
-                <div class="flex gap-8">
-                    <ui-input
-                        class="flex-1"
-                        type="number"
-                        name="Ширина, мм"
-                        v-model="label.width"
-                        :extraProps="{
-                            'min': 1,
-                            'max': 99
-                        }"
-                        :disabled="isEnabled"
-                    />
-                    <ui-input
-                        class="flex-1"
-                        type="number"
-                        name="Высота, мм"
-                        v-model="label.height"
-                        :extraProps="{
-                            'min': 1,
-                            'max': 99
-                        }"
-                        :disabled="isEnabled"
-                    />
-                </div>
-                <ui-input
-                    class="flex-1"
-                    type="number"
-                    name="Смещение по горизонтали, мм"
-                    desc="Укажите смещение по горизонтали, если текст находится левее/правее центра этикетки"
-                    v-model="label.offsetX"
-                    :extraProps="{
-                        'min': -99,
-                        'max': 99
-                    }"
-                    :disabled="isEnabled"
-                />
-                <ui-input
-                    class="flex-1"
-                    type="number"
-                    name="Смещение по вертикали, мм"
-                    desc="Укажите смещение по вертикали, если текст находится выше/ниже центра этикетки"
-                    v-model="label.offsetY"
-                    :extraProps="{
-                        'min': -99,
-                        'max': 99
-                    }"
-                    :disabled="isEnabled"
-                />
-            </template>
-        </common-container>
+                    <template #content>
+                        <div class="text-secondary">
+                            Расположение и размер текста автоматически подстроятся под размер этикетки
+                        </div>
+                        <div class="flex gap-8">
+                            <ui-input
+                                class="flex-1"
+                                type="number"
+                                name="Ширина, мм"
+                                v-model="label.width"
+                                :extraProps="{
+                                    'min': 10,
+                                    'max': 99
+                                }"
+                            />
+                            <ui-input
+                                class="flex-1"
+                                type="number"
+                                name="Высота, мм"
+                                v-model="label.height"
+                                :extraProps="{
+                                    'min': 10,
+                                    'max': 99
+                                }"
+                            />
+                        </div>
+                        <ui-input
+                            class="flex-1"
+                            type="number"
+                            name="Смещение по горизонтали, мм"
+                            desc="Укажите смещение по горизонтали, если текст находится левее/правее центра этикетки"
+                            v-model="label.offsetX"
+                            :extraProps="{
+                                'min': -99,
+                                'max': 99
+                            }"
+                            :disabled="ocr.isEnabled"
+                        />
+                        <ui-input
+                            class="flex-1"
+                            type="number"
+                            name="Смещение по вертикали, мм"
+                            desc="Укажите смещение по вертикали, если текст находится выше/ниже центра этикетки"
+                            v-model="label.offsetY"
+                            :extraProps="{
+                                'min': -99,
+                                'max': 99
+                            }"
+                            :disabled="ocr.isEnabled"
+                        />
+                    </template>
+                </common-container>
 
-        <common-container>
-            <template #header>
-                <b class="flex-1 text-20">Параметры печати</b>
-            </template>
 
-            <template #content>
-                <ui-input
-                    type="text"
-                    name="Разрешенные символы"
-                    desc="Символы, которые будут распознаваться. Указываются без пробела, стандартные символы: 0123456789-"
-                    v-model="params.symbols"
-                    :disabled="isEnabled"
-                />
-                <ui-input
-                    type="number"
-                    name="Минимальное количество символов"
-                    desc="Количество символов, от которых будет начинаться печать. Рекомендуется указывать минимум 2"
-                    v-model="params.min_symbols"
-                    :extraProps="{
-                        'min': 1,
-                        'max': 99
-                    }"
-                    :disabled="isEnabled"
-                />
-                <ui-input
-                    type="number"
-                    name="Интервал опроса экрана, мс"
-                    desc="Интервал обновления распознавания экрана в миллисекундах. Чем меньше значение, тем чаще выполняется распознавание и тем выше нагрузка на процессор. Рекомендуемое значение — 300 мс."
-                    v-model="params.interval"
-                    :extraProps="{
-                        'min': 1,
-                        'max': 9999
-                    }"
-                    :disabled="isEnabled"
-                />
-            </template>
-        </common-container>
+                <common-container>
+                    <template #header>
+                        <b class="flex-1 text-20">Печать шаблонов</b>
+                    </template>
 
-        <common-container>
-            <template #header>
-                <b class="flex-1 text-20">История печати</b>
-            </template>
+                    <template #content>
+                        <div class="text-secondary">
+                            Вы можете создавать новые и печатать существующие шаблоны этикеток
+                        </div>
+                        <ui-button appearance="positive" @click="addTicketTemplate()">
+                            Создать шаблон
+                        </ui-button>
 
-            <template #content>
-                <div class="text-secondary" v-if="history.length === 0">История пуста</div>
-                <template v-else>
-                    <ui-button appearance="negative" @click="history = []">
-                        Очистить историю
-                    </ui-button>
-                    <div v-for="i in history">
-                        {{ i.time }} — {{ i.text }}
-                    </div>
-                </template>
-            </template>
-        </common-container>
+                        <ui-button
+                            v-for="template in templates.list"
+                            @click="print(template)"
+                        >
+                            {{ template }}
+                        </ui-button>
+                    </template>
+                </common-container>
 
-        <common-container>
-            <template #header>
-                <b class="flex-1 text-20">История консоли</b>
-            </template>
 
-            <template #content>
-                <ui-button @click="showLogs = !showLogs">
-                    {{ showLogs ? 'Скрыть историю' : 'Получить историю консоли' }}
-                </ui-button>
+                <common-container>
+                    <template #header>
+                        <b class="flex-1 text-20">Консоль</b>
+                    </template>
 
-                <div
-                    v-for="(log, index) in logs"
-                    :key="index"
-                    class="log-item"
-                    :class="'log-' + log.type"
-                    v-if="showLogs"
-                >
-                    <div class="font-medium">
-                        [{{ log.time }}] {{ log.type.toUpperCase() }}
-                    </div>
-                    <pre>{{ log.message }}</pre>
-                </div>
-            </template>
-        </common-container>
+                    <template #content>
+                        <ui-button @click="showLogs = !showLogs">
+                            {{ showLogs ? 'Скрыть' : 'Показать' }}
+                        </ui-button>
 
-        <div class="text-center text-secondary font-medium">
-            Разработчик — TG: @vopper0
+                        <div
+                            v-for="(log, index) in logs"
+                            :key="index"
+                            class="flex flex-col gap-4 p-8 rounded-12"
+                            :class="'log-' + log.type"
+                            v-if="showLogs"
+                        >
+                            <div class="flex justify-between ">
+                                <div class="font-medium">{{ log.type.toUpperCase() }}</div>
+                                <div class="font-medium">{{ log.time }}</div>
+                            </div>
+                            <pre v-html="log.message" />
+                        </div>
+                    </template>
+                </common-container>
+            </div>
+
+
+            <div class="w-1/2 flex flex-col gap-8">
+                <common-container :border="getBorderStyle(printerCorrected, true)">
+                    <template #header>
+                        <font-awesome-icon
+                            icon="fa-solid fa-circle-exclamation"
+                            class="text-24 text-palette-negative"
+                            v-if="!printerCorrected"
+                        />
+                        <font-awesome-icon
+                            icon="fa-solid fa-circle-check"
+                            class="text-24 text-palette-positive"
+                            v-else
+                        />
+                        <b class="flex-1 text-20">Принтер</b>
+                        <div class="font-medium text-palette-negative" v-if="!printerCorrected">Принтер не выбран</div>
+                    </template>
+
+                    <template #content>
+                        <div class="text-secondary">
+                            Рекомендуется использовать термопринтер для более быстрой печати
+                        </div>
+
+                        <ui-select
+                            v-model="printer.selected"
+                            :values="printer.list"
+                            :disabled="ocr.isEnabled"
+                        />
+
+                        <div class="flex gap-8">
+                            <ui-button class="flex-1" @click="openPrinterSettings()">
+                                Свойства принтера
+                            </ui-button>
+                            <ui-button class="flex-1" @click="print('123')">
+                                Пробная печать
+                            </ui-button>
+                        </div>
+                        <ui-button class="flex-1" @click="getPrinters()">
+                            Обновить список принтеров
+                        </ui-button>
+                    </template>
+                </common-container>
+
+
+                <common-container>
+                    <template #header>
+                        <b class="flex-1 text-20">Параметры печати</b>
+                    </template>
+
+                    <template #content>
+                        <ui-input
+                            type="text"
+                            name="Разрешенные символы"
+                            desc="Символы, которые будут распознаваться. Указываются без пробела, стандартные символы: 0123456789-"
+                            v-model="params.symbols"
+                            :disabled="ocr.isEnabled"
+                        />
+                        <ui-input
+                            type="number"
+                            name="Минимальное количество символов"
+                            desc="Количество символов, от которых будет начинаться печать. Рекомендуется указывать минимум 2"
+                            v-model="params.min_symbols"
+                            :extraProps="{
+                                'min': 1,
+                                'max': 99
+                            }"
+                        />
+                        <ui-input
+                            type="number"
+                            name="Интервал опроса экрана, мс"
+                            desc="Интервал обновления распознавания экрана в миллисекундах. Чем меньше значение, тем чаще выполняется распознавание и тем выше нагрузка на процессор. Рекомендуемое значение — 300 мс"
+                            v-model="params.interval"
+                            :extraProps="{
+                                'min': 1,
+                                'max': 9999
+                            }"
+                        />
+                    </template>
+                </common-container>
+
+
+                <common-container>
+                    <template #header>
+                        <b class="flex-1 text-20">История распознавания</b>
+                    </template>
+
+                    <template #content>
+                        <div class="text-secondary" v-if="history.length === 0">История пуста</div>
+                        <template v-else>
+                            <ui-button appearance="negative" @click="history = []">
+                                Очистить историю
+                            </ui-button>
+                            <div v-for="i in history">
+                                {{ i.time }} — {{ i.text }}
+                            </div>
+                        </template>
+                    </template>
+                </common-container>
+            </div>
         </div>
     </div>
 </template>
 
 <script>
     import Tesseract from 'tesseract.js';
-    import UiButton from "@/components/ui/Button.vue";
-    // import {ipcRenderer} from "electron";
 
     export default {
         name: 'Main',
-        components: {UiButton},
 
         data() {
             return {
-                isProcessing: false,
-                isEnabled: false,
+                ocr: {
+                    isProcessing: false,
+                    isEnabled: false,
+                    captureCanvas: null,
+                    captureCtx: null,
+                    videoElement: null,
+                    stream: null,
+                    recognitionInterval: null,
+                    previousImageData: null,
+                    lastFrameCanvas: null,
+                    lastPrintedText: null,
+                },
+
                 area: {
                     x: 0,
                     y: 0,
@@ -296,8 +350,8 @@
                     selected: null
                 },
                 label: {
-                    width: 5,
-                    height: 5,
+                    width: 10,
+                    height: 10,
                     offsetX: 0,
                     offsetY: 0
                 },
@@ -306,20 +360,16 @@
                     min_symbols: 2,
                     interval: 300
                 },
+                templates: {
+                    modal: false,
+                    newText: null,
+                    list: ["П.П.", "В.П."]
+                },
                 history: [],
                 logs: [],
                 showLogs: false,
                 errorText: null,
                 canCloseError: false,
-
-                lastPrintedText: null,
-                recognitionInterval: null,
-                stream: null,
-                videoElement: null,
-
-                lastFrameCanvas: null,
-                captureCanvas: null,
-                captureCtx: null
             }
         },
 
@@ -334,10 +384,47 @@
         },
 
         methods: {
+            getBorderStyle(value, onlyNegative = false) {
+                if (value && !onlyNegative) {
+                    return 'positive'
+                } else if (!value) {
+                    return 'negative'
+                }
+            },
+
+            showError(text, canClose = false) {
+                this.canCloseError = canClose;
+                this.errorText = text;
+            },
+
+            addLog(type, ...args) {
+                const message = args.map(arg => {
+                    if (typeof arg === 'object') {
+                        try {
+                            return JSON.stringify(arg, null, 2)
+                        } catch {
+                            return '[object]'
+                        }
+                    }
+
+                    return String(arg)
+                }).join(' ')
+
+                this.logs.unshift({
+                    type,
+                    message,
+                    time: new Date().toLocaleTimeString()
+                })
+
+                if (this.logs.length > 100) {
+                    this.logs.pop()
+                }
+            },
+
+
             async editArea() {
                 await window.electronAPI.openAreaSelector()
-
-                window.electronAPI.onAreaSelectedOnce((area) => {
+                window.electronAPI.onAreaSelected((area) => {
                     this.area = area
 
                     localStorage.setItem(
@@ -347,61 +434,87 @@
                 })
             },
 
-            async openPrinterSettings() {
-                if (!this.printer.selected) {
-                    return this.showError("Принтер не выбран", true);
-                }
-                window.electronAPI.openPrinterSettings(this.printer.selected);
-            },
-
-            async testPrint() {
-                if (!this.printer.selected) {
-                    return this.showError("Выберите принтер", true);
-                }
-
-                const result = await window.electronAPI.print(
-                    this.printer.selected,
-                    this.label.width, this.label.height,
-                    this.label.offsetX, this.label.offsetY,
-                    "123"
-                )
-                if (!result) {
-                    return this.showError("Ошибка печати", true);
-                }
-            },
-
-            getBorderStyle(value, onlyNegative = false) {
-                if (value && !onlyNegative) {
-                    return 'positive'
-                } else if (!value) {
-                    return 'negative'
-                }
-            },
 
             async getPrinters() {
                 try {
                     const printers = await window.electronAPI.getPrinters()
-
                     this.printer.list = printers.map(p => ({
                         value: p.name,
                         label: p.displayName || p.name,
                         isDefault: p.isDefault
                     }))
 
-                    const defaultPrinter = this.printer.list.find(p => p.isDefault)
+                    const savedPrinter = localStorage.getItem('selectedPrinter')
+
+                    if (savedPrinter) {
+                        try {
+                            const parsedPrinter = JSON.parse(savedPrinter)
+                            const printerExists = this.printer.list.some(
+                                printer => printer.value === parsedPrinter
+                            )
+
+                            if (printerExists) {
+                                this.printer.selected = parsedPrinter
+                                return
+                            }
+
+                            localStorage.removeItem('selectedPrinter')
+                        } catch (e) {
+                            console.error(
+                                '[Printers] Failed to parse saved printer:',
+                                e
+                            )
+                            localStorage.removeItem('selectedPrinter')
+                        }
+                    }
+
+                    const defaultPrinter = this.printer.list.find(
+                        printer => printer.isDefault
+                    )
+
                     if (defaultPrinter) {
                         this.printer.selected = defaultPrinter.value
                     } else if (this.printer.list.length > 0) {
                         this.printer.selected = this.printer.list[0].value
                     }
                 } catch (error) {
-                    console.error('Failed to load printers:', error)
-                    return this.showError("Не удалось загрузить список принтеров, перезапустите программу.<br>При повторном возникновении ошибки обратитесь к разработчику");
+                    console.error('[Printers] Failed to get printers:', error)
+                    return this.showError(
+                        'Не удалось загрузить список принтеров, попробуйте перезапустить программу.<br>При повторном возникновении ошибки обратитесь к разработчику'
+                    )
                 }
             },
 
+            async openPrinterSettings() {
+                if (!this.printer.selected) {
+                    return this.showError("Принтер не выбран", true);
+                }
+
+                await window.electronAPI.openPrinterSettings(this.printer.selected);
+            },
+
+            async print(text) {
+                if (!this.printer.selected) {
+                    await this.stopRecognition();
+                    return this.showError("Принтер не выбран", true);
+                }
+
+                const result = await window.electronAPI.print(
+                    this.printer.selected,
+                    { ...this.label },
+                    text
+                );
+
+                if (!result) {
+                    await this.stopRecognition();
+                    console.error('[PRINTER] Ошибка печати:', result?.error || 'неизвестная ошибка');
+                    return this.showError("Ошибка печати, подробности в консоли", true);
+                }
+            },
+
+
             async startRecognition() {
-                if (this.isProcessing) return;
+                if (this.ocr.isProcessing) return;
 
                 if (!this.areaCorrected)
                     return this.showError("Выберите область захвата", true);
@@ -409,11 +522,11 @@
                 if (!this.printerCorrected)
                     return this.showError("Выберите принтер", true);
 
-                if (this.label.width < 5 || this.label.width > 99)
-                    return this.showError("Неверная ширина этикетки (5...99)", true);
+                if (this.label.width < 10 || this.label.width > 99)
+                    return this.showError("Неверная ширина этикетки (10...99)", true);
 
-                if (this.label.height < 5 || this.label.height > 99)
-                    return this.showError("Неверная высота этикетки (5...99)", true);
+                if (this.label.height < 10 || this.label.height > 99)
+                    return this.showError("Неверная высота этикетки (10...99)", true);
 
                 if (this.label.offsetX < -99 || this.label.offsetX > 99)
                     return this.showError("Неверное смещение текста этикетки по горизонтали (-99...99)", true);
@@ -431,22 +544,21 @@
                     return this.showError("Указано недопустимый интервал опроса экрана (1...9999)", true);
 
 
-                this.isEnabled = true;
-                this.lastPrintedText = null;
-                window.electronAPI.showBannerOverlay()
+                this.ocr.isEnabled = true;
+                this.ocr.lastPrintedText = null;
+
+                window.electronAPI.showWorkOverlayWindow({ ...this.area })
+
                 await this.initCapture();
             },
 
-            showError(text, canClose = false) {
-                this.canCloseError = canClose;
-                this.errorText = text;
-            },
-
             async initCapture() {
-                try {
-                    const { sourceId } = await window.electronAPI.startScreenCapture();
+                this.ocr.isProcessing = true;
 
-                    this.stream = await navigator.mediaDevices.getUserMedia({
+                try {
+                    const { sourceId } = await window.electronAPI.getScreenRecognitionSource();
+
+                    this.ocr.stream = await navigator.mediaDevices.getUserMedia({
                         audio: false,
                         video: {
                             mandatory: {
@@ -456,145 +568,263 @@
                         }
                     });
 
-                    this.videoElement = document.createElement('video');
-                    this.videoElement.srcObject = this.stream;
-                    await this.videoElement.play();
-                    this.isProcessing = false;
+                    this.ocr.videoElement = document.createElement('video');
+                    this.ocr.videoElement.srcObject = this.ocr.stream;
+                    await this.ocr.videoElement.play();
 
-                    this.runOCRLoop();
-
+                    this.ocr.isProcessing = false;
+                    await this.runOCRLoop();
                 } catch (err) {
                     console.error("Error starting capture:", err);
                     this.showError(`Не удалось запустить захват экрана.<br>${err.message}`, true);
-                    this.isProcessing = false;
-                }
-            },
-
-            async stopCapture() {
-                this.isEnabled = false;
-                this.isProcessing = false;
-                window.electronAPI.hideBannerOverlay()
-
-                if (this.recognitionInterval) {
-                    clearTimeout(this.recognitionInterval);
-                    this.recognitionInterval = null;
-                }
-
-                if (this.stream) {
-                    this.stream.getTracks().forEach(track => track.stop());
-                    this.stream = null;
-                }
-
-                if (this.videoElement) {
-                    this.videoElement.pause();
-                    this.videoElement.srcObject = null;
-                    this.videoElement = null;
+                    this.ocr.isProcessing = false;
                 }
             },
 
             async runOCRLoop() {
-                if (!this.isEnabled || !this.videoElement) return;
-                await new Promise(r => setTimeout(r, 100));
+                if (!this.ocr.isEnabled || !this.ocr.videoElement) {
+                    return
+                }
 
                 try {
-                    const canvas = this.captureCanvas;
-                    const ctx = this.captureCtx;
+                    const canvas = this.ocr.captureCanvas
+                    const ctx = this.ocr.captureCtx
 
-                    const { x, y, width, height } = this.area;
-                    canvas.width = width;
-                    canvas.height = height;
+                    const { x, y, width, height } = this.area
 
-                    this.lastFrameCanvas = canvas;
-                    ctx.filter = 'grayscale(1) contrast(3) brightness(1.2)';
+                    const scale = 2
+
+                    if (
+                        canvas.width !== width * scale ||
+                        canvas.height !== height * scale
+                    ) {
+                        canvas.width = width * scale
+                        canvas.height = height * scale
+                    }
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
                     ctx.drawImage(
-                        this.videoElement,
+                        this.ocr.videoElement,
                         x,
                         y,
                         width,
                         height,
                         0,
                         0,
-                        width,
-                        height
-                    );
-                    ctx.filter = 'none';
+                        canvas.width,
+                        canvas.height
+                    )
 
-                    const { data: { text } } = await this.worker.recognize(canvas);
+                    const imageData = ctx.getImageData(
+                        0,
+                        0,
+                        canvas.width,
+                        canvas.height
+                    )
+
+                    const data = imageData.data
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        const gray =
+                            data[i] * 0.299 +
+                            data[i + 1] * 0.587 +
+                            data[i + 2] * 0.114
+
+                        const value = gray > 140 ? 255 : 0
+
+                        data[i] = value
+                        data[i + 1] = value
+                        data[i + 2] = value
+                    }
+
+                    ctx.putImageData(imageData, 0, 0)
+
+                    this.ocr.lastFrameCanvas = canvas
+
+                    if (
+                        this.ocr.previousImageData &&
+                        this.framesAreEqual(
+                            imageData,
+                            this.ocr.previousImageData
+                        )
+                    ) {
+                        return
+                    }
+
+                    this.ocr.previousImageData = imageData
+
+                    const {
+                        data: { text }
+                    } = await this.ocr.worker.recognize(canvas)
 
                     const allowed = this.params.symbols
-                    const escaped = allowed.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+
+                    const escaped = allowed.replace(
+                        /[-[\]/{}()*+?.\\^$|]/g,
+                        '\\$&'
+                    )
+
                     const cleanText = text
                         .replace(new RegExp(`[^${escaped}]`, 'g'), '')
                         .trim()
 
-                    if (cleanText.length >= this.params.min_symbols) {
-                        console.log(`[OCR] Found: ${cleanText} | Last: ${this.lastPrintedText}`);
+                    const isValidText =
+                        cleanText.length >= this.params.min_symbols
 
-                        if (cleanText !== this.lastPrintedText) {
-                            console.log(`[OCR] Printing new label ${cleanText}`);
-                            await this.printLabel(cleanText);
-                            this.lastPrintedText = cleanText;
+                    const isNewText =
+                        cleanText !== this.ocr.lastPrintedText
 
-                            this.history.unshift({
-                                text: cleanText,
-                                time: new Date().toLocaleTimeString()
-                            });
-                            if (this.history.length > 100) this.history.pop();
+                    if (isValidText && isNewText) {
+                        console.log(
+                            '[OCR] New text detected:',
+                            cleanText
+                        )
+
+                        await this.print(cleanText + ".")
+
+                        this.ocr.lastPrintedText = cleanText
+                        window.electronAPI.updateWorkOverlayText(text)
+
+                        this.history.unshift({
+                            text: cleanText,
+                            time: new Date().toLocaleTimeString()
+                        })
+
+                        if (this.history.length > 100) {
+                            this.history.pop()
                         }
                     }
 
                 } catch (e) {
-                    console.error('[OCR] Error:', e);
+                    console.error('[OCR] Recognition error:', e)
                 } finally {
-                    if (this.isEnabled) {
-                        this.recognitionInterval = setTimeout(() => this.runOCRLoop(), this.params.interval);
+                    this.scheduleNextOCR()
+                }
+            },
+
+            scheduleNextOCR() {
+                if (!this.ocr.isEnabled) return
+                this.ocr.recognitionInterval = setTimeout( () => this.runOCRLoop(), this.params.interval )
+            },
+
+            framesAreEqual(current, previous) {
+                if (!previous) return false
+
+                const currentData = current.data
+                const previousData = previous.data
+
+                const step = 32
+
+                for (let i = 0; i < currentData.length; i += step) {
+                    if (currentData[i] !== previousData[i]) {
+                        return false
                     }
                 }
+
+                return true
             },
 
-            async printLabel(text) {
-                const result = await window.electronAPI.print(
-                    this.printer.selected,
-                    this.label.width, this.label.height,
-                    this.label.offsetX, this.label.offsetY,
-                    text
-                );
+            async stopRecognition() {
+                if (!this.ocr.isEnabled && !this.ocr.isProcessing) return;
 
-                if (!result || !result.success) {
-                    console.error('[Printer] Print failed:', result?.error);
+                this.ocr.isEnabled = false;
+                this.ocr.isProcessing = false;
+
+                window.electronAPI.hideWorkOverlayWindow()
+
+                if (this.ocr.recognitionInterval) {
+                    clearTimeout(this.ocr.recognitionInterval);
+                    this.ocr.recognitionInterval = null;
+                }
+
+                if (this.ocr.stream) {
+                    this.ocr.stream.getTracks().forEach(track => track.stop());
+                    this.ocr.stream = null;
+                }
+
+                if (this.ocr.videoElement) {
+                    this.ocr.videoElement.pause();
+                    this.ocr.videoElement.srcObject = null;
+                    this.ocr.videoElement = null;
                 }
             },
+
 
             async openPreviewWindow() {
-                if (!this.lastFrameCanvas || !this.isEnabled) {
-                    return this.showError("Захват экрана не начат", true);
+                if (!this.ocr.lastFrameCanvas || !this.ocr.isEnabled) {
+                    return this.showError("Предпросмотр доступен только во время распознавания текста", true);
                 }
 
-                const base64 = this.lastFrameCanvas.toDataURL('image/png');
+                const base64 = this.ocr.lastFrameCanvas.toDataURL('image/png');
                 window.electronAPI.openPreviewWindow(base64);
             },
 
-            addLog(type, ...args) {
-                const message = args.map(arg => {
-                    if (typeof arg === 'object') {
-                        try {
-                            return JSON.stringify(arg, null, 2)
-                        } catch {
-                            return '[object ' + arg + ']'
-                        }
+
+            addTicketTemplate() {
+                this.templates.newText = null;
+                this.templates.modal = true;
+            },
+
+            saveTemplate() {
+                this.templates.list.push(this.templates.newText);
+                this.templates.modal = false;
+            },
+
+            loadSaved() {
+                const savedArea = localStorage.getItem('selectedArea')
+                if (savedArea) {
+                    try {
+                        this.area = JSON.parse(savedArea)
+                    } catch(e) {
+                        console.error('Failed to load saved area', e)
+                        localStorage.removeItem('selectedArea')
                     }
+                }
 
-                    return String(arg)
-                }).join(' ')
+                const savedLabel = localStorage.getItem('labelSize')
+                if (savedLabel) {
+                    try {
+                        const parsedLabel = JSON.parse(savedLabel)
+                        this.label = { ...this.label, ...parsedLabel }
+                    } catch(e) {
+                        console.error('Failed to load saved label size', e)
+                        localStorage.removeItem('labelSize')
+                    }
+                }
 
-                this.logs.unshift({
-                    type,
-                    message,
-                    time: new Date().toLocaleTimeString()
-                })
+                const savedParams = localStorage.getItem('printParams')
+                if (savedParams) {
+                    try {
+                        const parsedParams = JSON.parse(savedParams)
+                        this.params = { ...this.params, ...parsedParams }
+                    } catch(e) {
+                        console.error('Failed to load saved params', e)
+                        localStorage.removeItem('printParams')
+                    }
+                }
 
-                if (this.logs.length > 500) {
-                    this.logs.pop()
+                const savedPrinter = localStorage.getItem('selectedPrinter')
+
+                if (savedPrinter) {
+                    try {
+                        const parsedPrinter = JSON.parse(savedPrinter)
+                        const printerExists = this.printer.list.some(
+                            printer => printer.value === parsedPrinter
+                        )
+
+                        if (printerExists) {
+                            this.printer.selected = parsedPrinter
+                        } else {
+                            console.warn(
+                                `[PRINTER] Saved printer not found: ${parsedPrinter}`
+                            )
+                            localStorage.removeItem('selectedPrinter')
+                        }
+                    } catch (e) {
+                        console.error('Failed to load saved printer', e)
+                        localStorage.removeItem('selectedPrinter')
+                    }
                 }
             }
         },
@@ -621,61 +851,43 @@
 
             if (!window.electronAPI) {
                 console.error('Electron API not available')
-                return this.showError("Не удалось загрузить API, перезапустите программу<br>При повторном возникновении ошибки обратитесь к разработчику")
+                return this.showError("Не удалось загрузить API, попробуйте перезапустить программу<br>При повторном возникновении ошибки обратитесь к разработчику")
             }
 
-            await this.getPrinters()
+            await this.getPrinters();
+            this.loadSaved();
 
-            const savedArea = localStorage.getItem('selectedArea')
-            if (savedArea) {
-                try {
-                    this.area = JSON.parse(savedArea)
-                } catch(e) {
-                    console.error('Failed to load saved area', e)
-                    localStorage.removeItem('selectedArea')
-                }
+            if (window.electronAPI.onStopRecognition) {
+                window.electronAPI.onStopRecognition(() => {
+                    this.stopRecognition();
+                });
             }
 
-            const savedLabel = localStorage.getItem('labelSize')
-            if (savedLabel) {
-                try {
-                    const parsedLabel = JSON.parse(savedLabel)
-                    this.label = { ...this.label, ...parsedLabel }
-                } catch(e) {
-                    console.error('Failed to load saved label size', e)
-                    localStorage.removeItem('labelSize')
-                }
-            }
-
-            const savedParams = localStorage.getItem('printParams')
-            if (savedParams) {
-                try {
-                    const parsedParams = JSON.parse(savedParams)
-                    this.params = { ...this.params, ...parsedParams }
-                } catch(e) {
-                    console.error('Failed to load saved params', e)
-                    localStorage.removeItem('printParams')
-                }
-            }
-
-            this.captureCanvas = document.createElement('canvas');
-            this.captureCtx = this.captureCanvas.getContext('2d');
-            if (!this.captureCtx) {
+            this.ocr.captureCanvas = document.createElement('canvas');
+            this.ocr.captureCtx = this.ocr.captureCanvas.getContext('2d', {
+                willReadFrequently: true
+            })
+            if (!this.ocr.captureCtx) {
                 return this.showError("Не удалось создать canvas context<br>При повторном возникновении ошибки обратитесь к разработчику");
             }
 
-            this.worker = await Tesseract.createWorker('eng');
-            await this.worker.setParameters({
+            this.ocr.worker = await Tesseract.createWorker('eng', Tesseract.OEM.LSTM_ONLY, {
+                load_system_dawg: '0',
+                load_freq_dawg: '0',
+            });
+            await this.ocr.worker.setParameters({
                 tessedit_char_whitelist: this.params.symbols,
-                tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE
+                tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
+                preserve_interword_spaces: '1',
+                user_defined_dpi: '300',
             });
         },
 
         async beforeUnmount() {
-            await this.stopCapture();
+            await this.stopRecognition();
 
-            if (this.worker) {
-                await this.worker.terminate();
+            if (this.ocr.worker) {
+                await this.ocr.worker.terminate();
             }
         },
 
@@ -683,7 +895,10 @@
             'label': {
                 deep: true,
                 handler(newVal) {
-                    localStorage.setItem('labelSize', JSON.stringify(newVal))
+                    localStorage.setItem(
+                        'labelSize',
+                        JSON.stringify(newVal)
+                    )
                 }
             },
 
@@ -698,11 +913,18 @@
             },
 
             'params.symbols': async function(newVal) {
-                if (this.worker) {
-                    await this.worker.setParameters({
+                if (this.ocr.worker) {
+                    await this.ocr.worker.setParameters({
                         tessedit_char_whitelist: newVal
                     });
                 }
+            },
+
+            'printer.selected'(newValue) {
+                localStorage.setItem(
+                    'selectedPrinter',
+                    JSON.stringify(newValue)
+                )
             }
         },
     }
@@ -758,7 +980,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        padding: 12px;
+        padding: 16px;
         border-radius: 32px;
         background: var(--color-bg-secondary);
         max-height: 90vh;
@@ -766,29 +988,15 @@
         width: 400px;
     }
 
-    .log-item {
-        padding: 8px;
-        border-radius: 12px;
-
-        font-size: 14px;
-        overflow-x: auto;
-    }
-
-    .log-item pre {
-        margin: 0;
-        white-space: pre-wrap;
-        word-break: break-word;
-    }
-
     .log-log {
-        background: rgba(255,255,255,.05);
+        background: var(--color-bg-tertiary);
     }
 
     .log-warn {
-        background: rgba(255,180,0,.1);
+        background: rgba(244, 244, 35, .5);
     }
 
     .log-error {
-        background: rgba(255,0,0,.1);
+        background: rgba(240, 49, 49, .5);
     }
 </style>

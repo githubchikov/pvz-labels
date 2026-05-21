@@ -12,7 +12,7 @@
             :disabled="disabled"
             :type="type"
             v-bind="extraProps"
-            class="outline-0 font-[inherit]! border! border-field rounded-16 bg-btn-neutral px-12 min-h-36 h-36 w-full transition-all duration-300"
+            class="outline-0 font-[inherit]! border-none! rounded-12 bg-btn-neutral px-12 min-h-36 h-36 w-full transition-all duration-300"
             maxlength="255"
         />
 
