@@ -7,11 +7,7 @@ import {
 import './config/env.ts'
 import path from 'node:path'
 
-import {registerAreaSelectorIPC} from "./ipc/areaSelector";
 import {registerPrinterIPC} from './ipc/printer'
-import {registerScreenRecognitionIPC} from "./ipc/screenRecognition";
-import {registerWorkOverlayIPC} from "./ipc/workOverlay";
-import {registerBannerOverlayIPC} from "./ipc/preview";
 
 import {createMainWindow} from './windows/mainWindow.ts'
 import {startWSServer} from './services/wsServer'
@@ -49,10 +45,6 @@ app.setAppUserModelId('PVZ Labels')
 
 app.whenReady().then(async () => {
     registerPrinterIPC()
-    registerBannerOverlayIPC()
-    registerWorkOverlayIPC()
-    registerScreenRecognitionIPC()
-
     startWSServer()
 
     mainWindow = await createMainWindow()
@@ -90,9 +82,6 @@ app.whenReady().then(async () => {
     ])
     tray.setToolTip('PVZ Labels')
     tray.setContextMenu(contextMenu)
-
-
-    registerAreaSelectorIPC(mainWindow)
 })
 
 app.setLoginItemSettings({

@@ -346,7 +346,6 @@
 
             async print(text) {
                 if (!this.printer.selected) {
-                    await this.stopRecognition();
                     return this.showError("Принтер не выбран", true);
                 }
 
@@ -357,7 +356,6 @@
                 );
 
                 if (!result) {
-                    await this.stopRecognition();
                     console.error('[PRINTER] Ошибка печати:', result?.error || 'неизвестная ошибка');
                     return this.showError("Ошибка печати, подробности в консоли", true);
                 }

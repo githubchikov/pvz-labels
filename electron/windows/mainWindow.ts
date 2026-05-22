@@ -20,7 +20,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
         fullscreenable: false,
 
         backgroundColor: '#171717',
-        // autoHideMenuBar: true,
+        autoHideMenuBar: true,
 
         webPreferences: {
             preload: path.join(MAIN_DIST, 'preload.cjs'),
