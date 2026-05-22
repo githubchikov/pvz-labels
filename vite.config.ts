@@ -11,7 +11,7 @@ export default defineConfig({
 
         electron({
             main: {
-                entry: 'electron/main.ts',
+                entry: 'electron/main.ts'
             },
 
             preload: {
@@ -33,7 +33,14 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
-        }
+        },
+    },
+
+    optimizeDeps: {
+        exclude: [
+            'bufferutil',
+            'utf-8-validate'
+        ]
     },
 
     build: {

@@ -40,27 +40,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="modal" v-else-if="areaSave.modal">
-                <div class="modal-container">
-                    <b class="text-center text-24">Сохранение области захвата</b>
-
-                    <ui-input
-                        v-model="areaSave.name"
-                        name="Имя области захвата"
-                    />
-
-                    <div class="flex flex-col gap-8">
-                        <ui-button appearance="positive" @click="saveAreaConfirm()">
-                            Сохранить
-                        </ui-button>
-
-                        <ui-button @click="areaSave.modal = false">
-                            Закрыть
-                        </ui-button>
-                    </div>
-                </div>
-            </div>
         </transition>
 
 
@@ -72,90 +51,13 @@
             </div>
         </div>
 
-
-        <common-container :border="getBorderStyle(ocr.isEnabled)">
-            <template #header>
-                <b class="flex-1 text-32">Статус</b>
-                <b class="text-32 text-palette-positive" v-if="ocr.isEnabled">В работе</b>
-                <b class="text-32" v-else>Выключено</b>
-            </template>
-
-            <template #content>
-                <common-animated-content>
-                    <ui-button appearance="negative" @click="stopRecognition()" v-if="ocr.isEnabled">
-                        Остановить
-                    </ui-button>
-                    <ui-button appearance="positive" @click="startRecognition()" v-else>
-                        Начать распознавание
-                    </ui-button>
-                </common-animated-content>
-            </template>
-        </common-container>
+        <b class="text-20 text-center">
+            Программа работает всегда в фоне и получает данные от расширения в браузере
+        </b>
 
 
         <div class="flex gap-8">
             <div class="w-1/2 flex flex-col gap-8">
-                <common-container :border="getBorderStyle(areaCorrected, true)">
-                    <template #header>
-                        <font-awesome-icon
-                            icon="fa-solid fa-circle-exclamation"
-                            class="text-24 text-palette-negative"
-                            v-if="!areaCorrected"
-                        />
-                        <font-awesome-icon
-                            icon="fa-solid fa-circle-check"
-                            class="text-24 text-palette-positive"
-                            v-else
-                        />
-                        <b class="flex-1 text-20">Область захвата</b>
-                        <div class="font-medium text-palette-negative" v-if="!areaCorrected">Область не выбрана</div>
-                    </template>
-
-                    <template #content>
-                        <div class="text-secondary">
-                            Область, в которой должно происходить распознавание номера ячейки. После выбора области не рекомендуется изменять масштаб браузера
-                        </div>
-                        <div class="flex gap-8">
-                            <ui-button class="flex-1" @click="editArea()" :disabled="ocr.isEnabled">
-                                Изменить область
-                            </ui-button>
-                            <ui-button class="flex-1" @click="openPreviewWindow()">
-                                Предпросмотр
-                            </ui-button>
-                        </div>
-                        <ui-button
-                            @click="saveArea()"
-                            :disabled="selectedSavedArea !== null"
-                        >
-                            Сохранить текущую область
-                        </ui-button>
-                    </template>
-                </common-container>
-
-
-                <common-container>
-                    <template #header>
-                        <b class="flex-1 text-20">Сохраненные области захвата</b>
-                    </template>
-
-                    <template #content>
-                        <div class="text-secondary">
-                            Вы можете сохранять область захвата для упрощения работы. Зеленым выделена та зона, которая сейчас используется
-                        </div>
-                        <div class="flex flex-col gap-8" v-if="savedAreas.length > 0">
-                            <ui-button
-                                v-for="area in savedAreas"
-                                :key="area.id"
-                                @click="selectArea(area)"
-                                :appearance="selectedSavedArea === area.id ? 'positive' : 'neutral'"
-                            >
-                                {{ area.name }}
-                            </ui-button>
-                        </div>
-                    </template>
-                </common-container>
-
-
                 <common-container>
                     <template #header>
                         <b class="flex-1 text-20">Размер этикетки</b>
@@ -197,7 +99,6 @@
                                 'min': -99,
                                 'max': 99
                             }"
-                            :disabled="ocr.isEnabled"
                         />
                         <ui-input
                             class="flex-1"
@@ -209,31 +110,7 @@
                                 'min': -99,
                                 'max': 99
                             }"
-                            :disabled="ocr.isEnabled"
                         />
-                    </template>
-                </common-container>
-
-
-                <common-container>
-                    <template #header>
-                        <b class="flex-1 text-20">Печать шаблонов</b>
-                    </template>
-
-                    <template #content>
-                        <div class="text-secondary">
-                            Вы можете создавать новые и печатать существующие шаблоны этикеток
-                        </div>
-                        <ui-button appearance="positive" @click="addTicketTemplate()">
-                            Создать шаблон
-                        </ui-button>
-
-                        <ui-button
-                            v-for="template in templates.list"
-                            @click="print(template)"
-                        >
-                            {{ template }}
-                        </ui-button>
                     </template>
                 </common-container>
 
@@ -291,14 +168,13 @@
                         <ui-select
                             v-model="printer.selected"
                             :values="printer.list"
-                            :disabled="ocr.isEnabled"
                         />
 
                         <div class="flex gap-8">
                             <ui-button class="flex-1" @click="openPrinterSettings()">
                                 Свойства принтера
                             </ui-button>
-                            <ui-button class="flex-1" @click="print('123')">
+                            <ui-button class="flex-1" @click="print('123.')">
                                 Пробная печать
                             </ui-button>
                         </div>
@@ -311,56 +187,23 @@
 
                 <common-container>
                     <template #header>
-                        <b class="flex-1 text-20">Параметры печати</b>
+                        <b class="flex-1 text-20">Печать шаблонов</b>
                     </template>
 
                     <template #content>
-                        <ui-input
-                            type="text"
-                            name="Разрешенные символы"
-                            desc="Символы, которые будут распознаваться. Указываются без пробела, стандартные символы: 0123456789-"
-                            v-model="params.symbols"
-                            :disabled="ocr.isEnabled"
-                        />
-                        <ui-input
-                            type="number"
-                            name="Минимальное количество символов"
-                            desc="Количество символов, от которых будет начинаться печать. Рекомендуется указывать минимум 2"
-                            v-model="params.min_symbols"
-                            :extraProps="{
-                                'min': 1,
-                                'max': 99
-                            }"
-                        />
-                        <ui-input
-                            type="number"
-                            name="Интервал опроса экрана, мс"
-                            desc="Интервал обновления распознавания экрана в миллисекундах. Чем меньше значение, тем чаще выполняется распознавание и тем выше нагрузка на процессор. Рекомендуемое значение — 300 мс"
-                            v-model="params.interval"
-                            :extraProps="{
-                                'min': 1,
-                                'max': 9999
-                            }"
-                        />
-                    </template>
-                </common-container>
+                        <div class="text-secondary">
+                            Вы можете создавать новые и печатать существующие шаблоны этикеток
+                        </div>
+                        <ui-button appearance="positive" @click="addLabelTemplate()">
+                            Создать шаблон
+                        </ui-button>
 
-
-                <common-container>
-                    <template #header>
-                        <b class="flex-1 text-20">История распознавания</b>
-                    </template>
-
-                    <template #content>
-                        <div class="text-secondary" v-if="history.length === 0">История пуста</div>
-                        <template v-else>
-                            <ui-button appearance="negative" @click="history = []">
-                                Очистить историю
-                            </ui-button>
-                            <div v-for="i in history">
-                                {{ i.time }} — {{ i.text }}
-                            </div>
-                        </template>
+                        <ui-button
+                            v-for="template in templates.list"
+                            @click="print(template)"
+                        >
+                            {{ template }}
+                        </ui-button>
                     </template>
                 </common-container>
             </div>
@@ -376,31 +219,6 @@
 
         data() {
             return {
-                ocr: {
-                    isProcessing: false,
-                    isEnabled: false,
-                    captureCanvas: null,
-                    captureCtx: null,
-                    videoElement: null,
-                    stream: null,
-                    recognitionInterval: null,
-                    previousImageData: null,
-                    lastFrameCanvas: null,
-                    lastPrintedText: null,
-                },
-
-                area: {
-                    x: 0,
-                    y: 0,
-                    width: 0,
-                    height: 0
-                },
-                savedAreas: [],
-                selectedSavedArea: null,
-                areaSave: {
-                    modal: false,
-                    name: ''
-                },
                 printer: {
                     list: [],
                     selected: null
@@ -411,17 +229,11 @@
                     offsetX: 0,
                     offsetY: 0
                 },
-                params: {
-                    symbols: '0123456789-',
-                    min_symbols: 2,
-                    interval: 300
-                },
                 templates: {
                     modal: false,
                     newText: null,
                     list: ["П.П.", "В.П."]
                 },
-                history: [],
                 logs: [],
                 showLogs: false,
                 errorText: null,
@@ -430,10 +242,6 @@
         },
 
         computed: {
-            areaCorrected() {
-                return this.area.width > 0 && this.area.height > 0
-            },
-
             printerCorrected() {
                 return this.printer.selected !== null
             }
@@ -475,77 +283,6 @@
                 if (this.logs.length > 100) {
                     this.logs.pop()
                 }
-            },
-
-
-            async editArea() {
-                await window.electronAPI.openAreaSelector()
-                window.electronAPI.onAreaSelected((area) => {
-                    this.area = area
-
-                    const matchedArea = this.savedAreas.find(saved =>
-                        JSON.stringify(saved.area) === JSON.stringify(area)
-                    )
-
-                    if (matchedArea) {
-                        this.selectedSavedArea = matchedArea.id
-                    } else {
-                        this.selectedSavedArea = null
-                    }
-
-                    localStorage.setItem(
-                        'selectedSavedArea',
-                        JSON.stringify(this.selectedSavedArea)
-                    )
-                })
-            },
-
-            saveArea() {
-                if (!this.areaCorrected) {
-                    return this.showError('Сначала выберите область захвата', true)
-                }
-
-                this.areaSave.name = ''
-                this.areaSave.modal = true
-            },
-
-            saveAreaConfirm() {
-                if (!this.areaSave.name?.trim()) {
-                    return this.showError('Введите название области', true)
-                }
-
-                const newArea = {
-                    id: Date.now(),
-                    name: this.areaSave.name.trim(),
-                    area: { ...this.area }
-                }
-
-                this.savedAreas.push(newArea)
-
-                localStorage.setItem(
-                    'savedAreas',
-                    JSON.stringify(this.savedAreas)
-                )
-
-                this.selectedSavedArea = newArea.id
-
-                this.areaSave.modal = false
-            },
-
-            selectArea(savedArea) {
-                this.area = { ...savedArea.area }
-
-                this.selectedSavedArea = savedArea.id
-
-                localStorage.setItem(
-                    'selectedArea',
-                    JSON.stringify(this.area)
-                )
-
-                localStorage.setItem(
-                    'selectedSavedArea',
-                    JSON.stringify(savedArea.id)
-                )
             },
 
 
@@ -627,255 +364,7 @@
             },
 
 
-            async startRecognition() {
-                if (this.ocr.isProcessing) return;
-
-                if (!this.areaCorrected)
-                    return this.showError("Выберите область захвата", true);
-
-                if (!this.printerCorrected)
-                    return this.showError("Выберите принтер", true);
-
-                if (this.label.width < 10 || this.label.width > 99)
-                    return this.showError("Неверная ширина этикетки (10...99)", true);
-
-                if (this.label.height < 10 || this.label.height > 99)
-                    return this.showError("Неверная высота этикетки (10...99)", true);
-
-                if (this.label.offsetX < -99 || this.label.offsetX > 99)
-                    return this.showError("Неверное смещение текста этикетки по горизонтали (-99...99)", true);
-
-                if (this.label.offsetY < -99 || this.label.offsetY > 99)
-                    return this.showError("Неверное смещение текста этикетки по вертикали (-99...99)", true);
-
-                if (!this.params.symbols)
-                    return this.showError("Не указаны допустимые символы", true);
-
-                if (this.params.min_symbols < 1 || this.params.min_symbols > 99)
-                    return this.showError("Указано недопустимое минимальное количество символов (1...99)", true);
-
-                if (this.params.interval < 1 || this.params.interval > 9999)
-                    return this.showError("Указано недопустимый интервал опроса экрана (1...9999)", true);
-
-
-                this.ocr.isEnabled = true;
-                this.ocr.lastPrintedText = null;
-
-                window.electronAPI.showWorkOverlayWindow({ ...this.area })
-
-                await this.initCapture();
-            },
-
-            async initCapture() {
-                this.ocr.isProcessing = true;
-
-                try {
-                    const { sourceId } = await window.electronAPI.getScreenRecognitionSource();
-
-                    this.ocr.stream = await navigator.mediaDevices.getUserMedia({
-                        audio: false,
-                        video: {
-                            mandatory: {
-                                chromeMediaSource: 'desktop',
-                                chromeMediaSourceId: sourceId,
-                            }
-                        }
-                    });
-
-                    this.ocr.videoElement = document.createElement('video');
-                    this.ocr.videoElement.srcObject = this.ocr.stream;
-                    await this.ocr.videoElement.play();
-
-                    this.ocr.isProcessing = false;
-                    await this.runOCRLoop();
-                } catch (err) {
-                    console.error("Error starting capture:", err);
-                    this.showError(`Не удалось запустить захват экрана.<br>${err.message}`, true);
-                    this.ocr.isProcessing = false;
-                }
-            },
-
-            async runOCRLoop() {
-                if (!this.ocr.isEnabled || !this.ocr.videoElement) {
-                    return
-                }
-
-                try {
-                    const canvas = this.ocr.captureCanvas
-                    const ctx = this.ocr.captureCtx
-
-                    const { x, y, width, height } = this.area
-
-                    const scale = 2
-
-                    if (
-                        canvas.width !== width * scale ||
-                        canvas.height !== height * scale
-                    ) {
-                        canvas.width = width * scale
-                        canvas.height = height * scale
-                    }
-
-                    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-                    ctx.drawImage(
-                        this.ocr.videoElement,
-                        x,
-                        y,
-                        width,
-                        height,
-                        0,
-                        0,
-                        canvas.width,
-                        canvas.height
-                    )
-
-                    const imageData = ctx.getImageData(
-                        0,
-                        0,
-                        canvas.width,
-                        canvas.height
-                    )
-
-                    const data = imageData.data
-
-                    for (let i = 0; i < data.length; i += 4) {
-                        const gray =
-                            data[i] * 0.299 +
-                            data[i + 1] * 0.587 +
-                            data[i + 2] * 0.114
-
-                        const value = gray > 140 ? 255 : 0
-
-                        data[i] = value
-                        data[i + 1] = value
-                        data[i + 2] = value
-                    }
-
-                    ctx.putImageData(imageData, 0, 0)
-
-                    this.ocr.lastFrameCanvas = canvas
-
-                    if (
-                        this.ocr.previousImageData &&
-                        this.framesAreEqual(
-                            imageData,
-                            this.ocr.previousImageData
-                        )
-                    ) {
-                        return
-                    }
-
-                    this.ocr.previousImageData = imageData
-
-                    const {
-                        data: { text }
-                    } = await this.ocr.worker.recognize(canvas)
-
-                    const allowed = this.params.symbols
-
-                    const escaped = allowed.replace(
-                        /[-[\]/{}()*+?.\\^$|]/g,
-                        '\\$&'
-                    )
-
-                    const cleanText = text
-                        .replace(new RegExp(`[^${escaped}]`, 'g'), '')
-                        .trim()
-
-                    const isValidText =
-                        cleanText.length >= this.params.min_symbols
-
-                    const isNewText =
-                        cleanText !== this.ocr.lastPrintedText
-
-                    if (isValidText && isNewText) {
-                        console.log(
-                            '[OCR] New text detected:',
-                            cleanText
-                        )
-
-                        await this.print(cleanText)
-
-                        this.ocr.lastPrintedText = cleanText
-                        window.electronAPI.updateWorkOverlayText(text)
-
-                        this.history.unshift({
-                            text: cleanText,
-                            time: new Date().toLocaleTimeString()
-                        })
-
-                        if (this.history.length > 100) {
-                            this.history.pop()
-                        }
-                    }
-
-                } catch (e) {
-                    console.error('[OCR] Recognition error:', e)
-                } finally {
-                    this.scheduleNextOCR()
-                }
-            },
-
-            scheduleNextOCR() {
-                if (!this.ocr.isEnabled) return
-                this.ocr.recognitionInterval = setTimeout( () => this.runOCRLoop(), this.params.interval )
-            },
-
-            framesAreEqual(current, previous) {
-                if (!previous) return false
-
-                const currentData = current.data
-                const previousData = previous.data
-
-                const step = 32
-
-                for (let i = 0; i < currentData.length; i += step) {
-                    if (currentData[i] !== previousData[i]) {
-                        return false
-                    }
-                }
-
-                return true
-            },
-
-            async stopRecognition() {
-                if (!this.ocr.isEnabled && !this.ocr.isProcessing) return;
-
-                this.ocr.isEnabled = false;
-                this.ocr.isProcessing = false;
-
-                window.electronAPI.hideWorkOverlayWindow()
-
-                if (this.ocr.recognitionInterval) {
-                    clearTimeout(this.ocr.recognitionInterval);
-                    this.ocr.recognitionInterval = null;
-                }
-
-                if (this.ocr.stream) {
-                    this.ocr.stream.getTracks().forEach(track => track.stop());
-                    this.ocr.stream = null;
-                }
-
-                if (this.ocr.videoElement) {
-                    this.ocr.videoElement.pause();
-                    this.ocr.videoElement.srcObject = null;
-                    this.ocr.videoElement = null;
-                }
-            },
-
-
-            async openPreviewWindow() {
-                if (!this.ocr.lastFrameCanvas || !this.ocr.isEnabled) {
-                    return this.showError("Предпросмотр доступен только во время распознавания текста", true);
-                }
-
-                const base64 = this.ocr.lastFrameCanvas.toDataURL('image/png');
-                window.electronAPI.openPreviewWindow(base64);
-            },
-
-
-            addTicketTemplate() {
+            addLabelTemplate() {
                 this.templates.newText = null;
                 this.templates.modal = true;
             },
@@ -886,16 +375,6 @@
             },
 
             loadSaved() {
-                const savedArea = localStorage.getItem('selectedArea')
-                if (savedArea) {
-                    try {
-                        this.area = JSON.parse(savedArea)
-                    } catch(e) {
-                        console.error('Failed to load saved area', e)
-                        localStorage.removeItem('selectedArea')
-                    }
-                }
-
                 const savedLabel = localStorage.getItem('labelSize')
                 if (savedLabel) {
                     try {
@@ -907,19 +386,7 @@
                     }
                 }
 
-                const savedParams = localStorage.getItem('printParams')
-                if (savedParams) {
-                    try {
-                        const parsedParams = JSON.parse(savedParams)
-                        this.params = { ...this.params, ...parsedParams }
-                    } catch(e) {
-                        console.error('Failed to load saved params', e)
-                        localStorage.removeItem('printParams')
-                    }
-                }
-
                 const savedPrinter = localStorage.getItem('selectedPrinter')
-
                 if (savedPrinter) {
                     try {
                         const parsedPrinter = JSON.parse(savedPrinter)
@@ -938,26 +405,6 @@
                     } catch (e) {
                         console.error('Failed to load saved printer', e)
                         localStorage.removeItem('selectedPrinter')
-                    }
-                }
-
-                const savedAreas = localStorage.getItem('savedAreas')
-                if (savedAreas) {
-                    try {
-                        this.savedAreas = JSON.parse(savedAreas)
-                    } catch(e) {
-                        console.error('Failed to load saved areas', e)
-                        localStorage.removeItem('savedAreas')
-                    }
-                }
-
-                const selectedSavedArea = localStorage.getItem('selectedSavedArea')
-                if (selectedSavedArea) {
-                    try {
-                        this.selectedSavedArea = JSON.parse(selectedSavedArea)
-                    } catch(e) {
-                        console.error('Failed to load selected saved area', e)
-                        localStorage.removeItem('selectedSavedArea')
                     }
                 }
             }
@@ -990,67 +437,20 @@
 
             await this.getPrinters();
             this.loadSaved();
-
-            if (window.electronAPI.onStopRecognition) {
-                window.electronAPI.onStopRecognition(() => {
-                    this.stopRecognition();
-                });
-            }
-
-            this.ocr.captureCanvas = document.createElement('canvas');
-            this.ocr.captureCtx = this.ocr.captureCanvas.getContext('2d', {
-                willReadFrequently: true
-            })
-            if (!this.ocr.captureCtx) {
-                return this.showError("Не удалось создать canvas context<br>При повторном возникновении ошибки обратитесь к разработчику");
-            }
-
-            this.ocr.worker = await Tesseract.createWorker('eng', Tesseract.OEM.LSTM_ONLY, {
-                load_system_dawg: '0',
-                load_freq_dawg: '0',
-            });
-            await this.ocr.worker.setParameters({
-                tessedit_char_whitelist: this.params.symbols,
-                tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
-                preserve_interword_spaces: '1',
-                user_defined_dpi: '300',
-            });
-        },
-
-        async beforeUnmount() {
-            await this.stopRecognition();
-
-            if (this.ocr.worker) {
-                await this.ocr.worker.terminate();
-            }
         },
 
         watch: {
             'label': {
                 deep: true,
-                handler(newVal) {
+                async handler(newVal) {
                     localStorage.setItem(
                         'labelSize',
                         JSON.stringify(newVal)
                     )
-                }
-            },
-
-            'params': {
-                deep: true,
-                handler(newVal) {
-                    localStorage.setItem(
-                        'printParams',
-                        JSON.stringify(newVal)
+                    await window.electronAPI.updatePrinterConfig(
+                        this.printer.selected,
+                        JSON.parse(JSON.stringify(this.label))
                     )
-                }
-            },
-
-            'params.symbols': async function(newVal) {
-                if (this.ocr.worker) {
-                    await this.ocr.worker.setParameters({
-                        tessedit_char_whitelist: newVal
-                    });
                 }
             },
 
@@ -1058,13 +458,6 @@
                 localStorage.setItem(
                     'selectedPrinter',
                     JSON.stringify(newValue)
-                )
-            },
-
-            selectedSavedArea(newVal) {
-                localStorage.setItem(
-                    'selectedSavedArea',
-                    JSON.stringify(newVal)
                 )
             }
         },

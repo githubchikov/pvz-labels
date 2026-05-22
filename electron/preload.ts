@@ -34,6 +34,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
         text: string
     ) => ipcRenderer.invoke('printer:print', name, label, text),
 
+    updatePrinterConfig: (
+        printerName: string,
+        label: LabelConfig
+    ) =>
+        ipcRenderer.invoke(
+            'printer:update-config',
+            {
+                printerName,
+                label
+            }
+        ),
+
 
     getScreenRecognitionSource: () =>
         ipcRenderer.invoke('screen-recognition:get-source'),

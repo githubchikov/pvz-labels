@@ -9,7 +9,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
         icon: path.join(process.env.VITE_PUBLIC, 'icon.ico'),
 
         width: 1000,
-        height: 800,
+        height: 700,
 
         minHeight: 300,
         minWidth: 800,
@@ -20,7 +20,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
         fullscreenable: false,
 
         backgroundColor: '#171717',
-        autoHideMenuBar: true,
+        // autoHideMenuBar: true,
 
         webPreferences: {
             preload: path.join(MAIN_DIST, 'preload.cjs'),

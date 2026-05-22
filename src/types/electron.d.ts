@@ -44,6 +44,7 @@ declare global {
 
             openPreviewWindow: () => void
             // onWorkOverlayUpdateText(param: ((text) => void) | any): void;
+            // async updatePrinterConfig(selected, parse: any): any;
         }
     }
 }
