@@ -45,7 +45,7 @@
 
         <div class="flex items-center w-full gap-8">
             <b class="text-40">PVZ Labels</b>
-            <div class="font-medium text-20 text-secondary">v2.0.0</div>
+            <div class="font-medium text-20 text-secondary">v2.3.2</div>
             <div class="flex-1 text-right font-medium text-20">
                 Автоматическая печать номеров ячеек для ПВЗ
             </div>
@@ -60,7 +60,7 @@
             <div class="w-1/2 flex flex-col gap-8">
                 <common-container>
                     <template #header>
-                        <b class="flex-1 text-20">Размер этикетки</b>
+                        <b class="flex-1 text-20">Этикетки</b>
                     </template>
 
                     <template #content>
@@ -115,31 +115,11 @@
                 </common-container>
 
 
-                <common-container>
-                    <template #header>
-                        <b class="flex-1 text-20">Консоль</b>
-                    </template>
-
-                    <template #content>
-                        <ui-button @click="showLogs = !showLogs">
-                            {{ showLogs ? 'Скрыть' : 'Показать' }}
-                        </ui-button>
-
-                        <div
-                            v-for="(log, index) in logs"
-                            :key="index"
-                            class="flex flex-col gap-4 p-8 rounded-12"
-                            :class="'log-' + log.type"
-                            v-if="showLogs"
-                        >
-                            <div class="flex justify-between ">
-                                <div class="font-medium">{{ log.type.toUpperCase() }}</div>
-                                <div class="font-medium">{{ log.time }}</div>
-                            </div>
-                            <pre v-html="log.message" />
-                        </div>
-                    </template>
-                </common-container>
+                <div class="flex items-center justify-center flex-col rounded-28 bg-secondary h-full text-center">
+                    <b>Разработка</b>
+                    <div class="text-secondary">TG: @vopper0</div>
+                    <div class="text-secondary">github.com/githubchikov/pvz-labels</div>
+                </div>
             </div>
 
 
@@ -187,7 +167,7 @@
 
                 <common-container>
                     <template #header>
-                        <b class="flex-1 text-20">Печать шаблонов</b>
+                        <b class="flex-1 text-20">Шаблоны</b>
                     </template>
 
                     <template #content>
@@ -212,8 +192,6 @@
 </template>
 
 <script>
-    import Tesseract from 'tesseract.js';
-
     export default {
         name: 'Main',
 
@@ -234,8 +212,6 @@
                     newText: null,
                     list: ["П.П.", "В.П."]
                 },
-                logs: [],
-                showLogs: false,
                 errorText: null,
                 canCloseError: false,
             }
@@ -260,31 +236,6 @@
                 this.canCloseError = canClose;
                 this.errorText = text;
             },
-
-            addLog(type, ...args) {
-                const message = args.map(arg => {
-                    if (typeof arg === 'object') {
-                        try {
-                            return JSON.stringify(arg, null, 2)
-                        } catch {
-                            return '[object]'
-                        }
-                    }
-
-                    return String(arg)
-                }).join(' ')
-
-                this.logs.unshift({
-                    type,
-                    message,
-                    time: new Date().toLocaleTimeString()
-                })
-
-                if (this.logs.length > 100) {
-                    this.logs.pop()
-                }
-            },
-
 
             async getPrinters() {
                 try {
@@ -409,25 +360,6 @@
         },
 
         async mounted() {
-            const originalLog = console.log
-            const originalError = console.error
-            const originalWarn = console.warn
-
-            console.log = (...args) => {
-                this.addLog('log', ...args)
-                originalLog(...args)
-            }
-
-            console.error = (...args) => {
-                this.addLog('error', ...args)
-                originalError(...args)
-            }
-
-            console.warn = (...args) => {
-                this.addLog('warn', ...args)
-                originalWarn(...args)
-            }
-
             if (!window.electronAPI) {
                 console.error('Electron API not available')
                 return this.showError("Не удалось загрузить API, попробуйте перезапустить программу<br>При повторном возникновении ошибки обратитесь к разработчику")
@@ -518,17 +450,5 @@
         max-height: 90vh;
         overflow: hidden;
         width: 400px;
-    }
-
-    .log-log {
-        background: var(--color-bg-tertiary);
-    }
-
-    .log-warn {
-        background: rgba(244, 244, 35, .5);
-    }
-
-    .log-error {
-        background: rgba(240, 49, 49, .5);
     }
 </style>

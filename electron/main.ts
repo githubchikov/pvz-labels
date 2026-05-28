@@ -23,6 +23,30 @@ let tray: Tray | null = null
 let isQuiting = false
 
 
+function bringAppToFront() {
+    if (!mainWindow) return
+
+    mainWindow.show()
+
+    if (mainWindow.isMinimized()) {
+        mainWindow.restore()
+    }
+
+    mainWindow.focus()
+    mainWindow.setSkipTaskbar(false)
+}
+
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+    app.exit()
+} else {
+    app.on('second-instance', () => {
+        bringAppToFront()
+        notification('Приложение уже запущено — открываю текущее окно')
+    })
+}
+
+
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit()
@@ -42,24 +66,23 @@ app.on('before-quit', () => {
 
 app.setAppUserModelId('PVZ Labels')
 
-
 app.whenReady().then(async () => {
     registerPrinterIPC()
     startWSServer()
 
-    mainWindow = await createMainWindow()
-    mainWindow.on('close', (event) => {
+    tray = new Tray(path.join(process.env.VITE_PUBLIC, 'icon.ico'))
+    tray.setToolTip('PVZ Labels')
 
-        if (!isQuiting) {
-            event.preventDefault()
-            mainWindow?.hide()
-            notification("Программа работает в фоне")
+    tray.setContextMenu(Menu.buildFromTemplate([
+        {
+            label: 'Открыть PVZ Labels',
+            click: () => mainWindow?.show()
+        }, {
+            label: 'Закрыть',
+            click: () => app.quit()
         }
-    })
+    ]))
 
-    tray = new Tray(
-        path.join(__dirname, '../public/icon.ico')
-    )
     tray.on('click', () => {
         if (mainWindow?.isVisible()) {
             mainWindow.hide()
@@ -67,23 +90,21 @@ app.whenReady().then(async () => {
             mainWindow?.show()
         }
     })
-    const contextMenu = Menu.buildFromTemplate([
-        {
-            label: 'Открыть PVZ Labels',
-            click: () => {
-                mainWindow?.show()
-            }
-        }, {
-            label: 'Закрыть',
-            click: () => {
-                app.quit()
-            }
+
+    mainWindow = await createMainWindow()
+
+    mainWindow.on('close', (event) => {
+        if (!isQuiting) {
+            event.preventDefault()
+            mainWindow?.hide()
+            notification("Программа работает в фоне")
         }
-    ])
-    tray.setToolTip('PVZ Labels')
-    tray.setContextMenu(contextMenu)
+    })
 })
 
-app.setLoginItemSettings({
-    openAtLogin: true
-})
+if (app.isPackaged) {
+    app.setLoginItemSettings({
+        openAtLogin: true,
+        path: process.execPath
+    })
+}

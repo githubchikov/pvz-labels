@@ -1,10 +1,11 @@
 {
   "name": "pvz_labels",
   "private": true,
-  "version": "2.3.0",
+  "version": "2.3.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev2": "vite",
     "build": "vue-tsc && vite build && electron-builder",
     "preview": "vite preview"
   },
@@ -47,6 +48,15 @@
       "dist-electron/**/*",
       "node_modules/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "public/icon.ico",
+        "to": "icon.ico"
+      }, {
+        "from": "public/error.ico",
+        "to": "error.ico"
+      }
     ],
     "win": {
       "target": "nsis",
