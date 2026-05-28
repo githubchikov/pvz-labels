@@ -9,7 +9,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
         icon: path.join(process.env.VITE_PUBLIC, 'icon.ico'),
 
         width: 1000,
-        height: 589,
+        height: 640,
 
         minHeight: 300,
         minWidth: 800,
